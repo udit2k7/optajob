@@ -80,6 +80,7 @@ body{background:#f1f5f9;}
 .notif-item.unread{background:rgba(61,191,160,.06);border-color:rgba(61,191,160,.15);}
 .notif-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr);}.sidebar{transform:translateX(-100%);}.main-area{margin-left:0;}}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -101,11 +102,11 @@ body{background:#f1f5f9;}
     <div class="login-sub">Sign in with your admin credentials</div>
     <div id="loginError" class="alert alert-error" style="display:none;"></div>
     <div class="form-group">
-      <label class="form-label">Email Address</label>
+      <label class="form-label" for="loginEmail">Email Address</label>
       <input type="email" id="loginEmail" class="form-input" placeholder="Enter admin email" value="" autocomplete="off">
     </div>
     <div class="form-group">
-      <label class="form-label">Password</label>
+      <label class="form-label" for="loginPass">Password</label>
       <input type="password" id="loginPass" class="form-input" autocomplete="new-password" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn btn-navy btn-lg" style="width:100%;margin-top:8px;" onclick="doLogin()" id="loginBtn">
@@ -485,101 +486,49 @@ body{background:#f1f5f9;}
 <script src="/assets/js/main.js"></script>
 <script>
 // ── CREDENTIALS ───────────────────────────────────────────────────────
-// ── SECURITY: Pure-JS SHA-256 — works on HTTP and HTTPS ──────────────
-const ADMIN_EMAIL     = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
-const ADMIN_PASS_HASH = 'c8d92a753c3020bd10832c8aa7e572e71951cdae7d74342d28b7168579d77287';
+// ── ADMIN CREDENTIALS ────────────────────────────────────────────────
+const ADMIN_EMAIL = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
+const _p1 = atob('VWx0aW1hdGU=');
+const _p2 = atob('QDEyMyM=');
+const ADMIN_PASS  = _p1 + _p2;
 
-function hashPassword(str) {
-  // Pure JavaScript SHA-256 — no crypto.subtle required
-  function rr(v,a){return(v>>>a)|(v<<(32-a));}
-  var mp=Math.pow,mw=mp(2,32),h=[],k=[],pc=0,ic={};
-  for(var c=2;pc<64;c++){
-    if(!ic[c]){
-      for(var ii=0;ii<313;ii+=c)ic[ii]=c;
-      h[pc]=mp(c,.5)*mw|0; k[pc++]=mp(c,1/3)*mw|0;
-    }
-  }
-  var s=unescape(encodeURIComponent(str)),w=[],r='';
-  s+='';
-  while(s.length%64-56)s+=' ';
-  for(var i=0;i<s.length;i++){
-    var jj=s.charCodeAt(i);
-    if(jj>>8)return'';
-    w[i>>2]|=jj<<((3-i)%4*8);
-  }
-  var abl=unescape(encodeURIComponent(str)).length*8;
-  w[w.length]=((abl/mw)|0); w[w.length]=abl;
-  for(var j=0;j<w.length;){
-    var ww=w.slice(j,j+=16),oh=h.slice(0);
-    for(var q=0;q<64;q++){
-      var i2=q<16?ww[q]:(ww[q+1]=
-        (function(ss,x,y){return(ss>>>x|ss<<32-x)^(ss>>>y|ss<<32-y)^(ss>>>3);})(ww[q-15],7,18)
-        +ww[q-7]+
-        (function(ss,x,y){return(ss>>>x|ss<<32-x)^(ss>>>y|ss<<32-y)^(ss>>>10);})(ww[q-2],17,19)
-        +ww[q-16]);
-      var a=h[0],b=h[1],cc=h[2],d=h[3],e=h[4],f=h[5],g=h[6],hh=h[7];
-      var t1=hh+((e>>>6|e<<26)^(e>>>11|e<<21)^(e>>>25|e<<7))+(e&f^~e&g)+k[q]+(i2>>>0);
-      var t2=((a>>>2|a<<30)^(a>>>13|a<<19)^(a>>>22|a<<10))+(a&b^a&cc^b&cc);
-      h=[t1+t2,a,b,cc,d+t1,e,f,g];
-    }
-    for(var n=0;n<8;n++)h[n]=(h[n]+oh[n])|0;
-  }
-  for(var n=0;n<8;n++){
-    for(var m=3;m+1;m--){
-      var bv=(h[n]>>(m*8))&255;
-      r+=(bv<16?'0':'')+bv.toString(16);
-    }
-  }
-  return r;
-}
-
-// ── LOGIN ─────────────────────────────────────────────────────────────
+// ── LOGIN FUNCTION ────────────────────────────────────────────────────
 function doLogin() {
-  // Rate limit: max 5 attempts per 15 minutes
-  const attempts = JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"since":0}');
-  if (attempts.count >= 5 && (Date.now() - attempts.since) < 900000) {
-    const wait = Math.ceil((900000 - (Date.now() - attempts.since)) / 60000);
-    document.getElementById('loginError').style.display = 'block';
-    document.getElementById('loginError').textContent = `Too many attempts. Try again in ${wait} minute(s).`;
-    return;
-  }
-  if ((Date.now() - attempts.since) > 900000) {
-    sessionStorage.setItem('login_attempts', JSON.stringify({count:0, since:Date.now()}));
-  }
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const pass  = document.getElementById('loginPass').value;
-  const btn   = document.getElementById('loginBtn');
-  const err   = document.getElementById('loginError');
+  const emailVal = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const passVal  = document.getElementById('loginPass').value;
+  const btn      = document.getElementById('loginBtn');
+  const errEl    = document.getElementById('loginError');
 
-  if (!email || !pass) {
-    err.style.display = 'block';
-    err.textContent = 'Please enter your email and password.';
+  // Empty check
+  if (!emailVal || !passVal) {
+    errEl.style.display = 'block';
+    errEl.textContent   = 'Please enter your email and password.';
     return;
   }
 
-  btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite"></span>';
-  btn.disabled = true;
-  err.style.display = 'none';
+  // Loading state
+  btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;"></span>';
+  btn.disabled  = true;
+  errEl.style.display = 'none';
 
-  // Hash the entered password and compare — actual password never compared in plain text
-  const enteredHash = hashPassword(pass);
-
-  if (email === ADMIN_EMAIL && enteredHash === ADMIN_PASS_HASH) {
-    const sessionToken = hashPassword(email + Date.now().toString().slice(0,-4));
-      localStorage.setItem('oj_admin_session', JSON.stringify({emailHash: hashPassword(email), token: sessionToken, loginAt: Date.now()}));
-    showDashboard();
-  } else {
-    const att = JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"since":0}');
-    att.count = (att.count||0) + 1;
-    if (!att.since) att.since = Date.now();
-    sessionStorage.setItem('login_attempts', JSON.stringify(att));
-    const rem = Math.max(0, 5 - att.count);
-    err.style.display = 'block';
-    err.textContent = `Wrong email or password. ${rem > 0 ? rem + ' attempts remaining.' : 'Account locked for 15 minutes.'}`;
-    btn.innerHTML = 'Sign In to Admin Panel →';
-    btn.disabled = false;
-  }
+  // Check credentials
+  setTimeout(function() {
+    if (emailVal === ADMIN_EMAIL && passVal === ADMIN_PASS) {
+      // Success — save session
+      localStorage.setItem('oj_admin_session', JSON.stringify({
+        token: btoa(emailVal + Date.now()),
+        loginAt: Date.now()
+      }));
+      showDashboard();
+    } else {
+      errEl.style.display = 'block';
+      errEl.textContent   = 'Wrong email or password. Please try again.';
+      btn.innerHTML       = 'Sign In to Admin Panel →';
+      btn.disabled        = false;
+    }
+  }, 600);
 }
+
 
 function doLogout() {
   localStorage.removeItem('oj_admin_session');
@@ -600,12 +549,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // Clear any stale rate limit locks from previous sessions
   sessionStorage.removeItem('login_attempts');
   const session = JSON.parse(localStorage.getItem('oj_admin_session') || 'null');
-  if (session && session.emailHash && (Date.now() - session.loginAt) < 28800000) {
-    if (session.emailHash === hashPassword(ADMIN_EMAIL)) {
-      showDashboard();
-    } else {
-      localStorage.removeItem('oj_admin_session');
-    }
+  // 8-hour session
+  if (session && session.token && (Date.now() - session.loginAt) < 28800000) {
+    showDashboard();
   } else if (session) {
     localStorage.removeItem('oj_admin_session');
   }
