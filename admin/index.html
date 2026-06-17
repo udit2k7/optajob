@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OptaJob Admin Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230e2550' rx='20'/><line x1='20' y1='80' x2='70' y2='24' stroke='%231b3f7d' stroke-width='14' stroke-linecap='round'/><circle cx='44' cy='26' r='12' fill='%235dd4b8'/></svg>">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
 <link rel="stylesheet" href="/assets/css/style.css">
 <style>
 body{background:#f1f5f9;}
@@ -100,11 +105,11 @@ body{background:#f1f5f9;}
     <div id="loginError" class="alert alert-error" style="display:none;"></div>
     <div class="form-group">
       <label class="form-label">Email Address</label>
-      <input type="email" id="loginEmail" class="form-input" placeholder="           " value="">
+      <input type="email" id="loginEmail" class="form-input" placeholder="Enter admin email" value="" autocomplete="off">
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input type="password" id="loginPass" class="form-input" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="password" id="loginPass" class="form-input" autocomplete="new-password" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn btn-navy btn-lg" style="width:100%;margin-top:8px;" onclick="doLogin()" id="loginBtn">
       Sign In to Admin Panel →
@@ -140,7 +145,7 @@ body{background:#f1f5f9;}
       <button class="nav-item" onclick="showPage('admins',this)"><span class="nav-item-icon">🛡</span>Admin Users</button>
       <div style="margin-top:auto;padding:16px;">
         <button class="btn btn-danger btn-sm" style="width:100%;" onclick="doLogout()">Sign Out</button>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.25);text-align:center;margin-top:10px;">OptaJob Admin · Made by Udit Tandon</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.25);text-align:center;margin-top:10px;">OptaJob Admin</div>
       </div>
     </div>
 
@@ -355,7 +360,7 @@ body{background:#f1f5f9;}
                 <div class="api-icon" style="background:rgba(61,191,160,.15);">👑</div>
                 <div class="api-info">
                   <div class="api-name">Udit Tandon (Primary)</div>
-                  <div class="api-detail">2mins.facts@gmail.com · Cannot be removed</div>
+                  <div class="api-detail"><span data-email="Mm1pbnMuZmFjdHNAZ21haWwuY29t">Admin</span> · Cannot be removed</div>
                 </div>
                 <span class="badge badge-teal">Primary Admin</span>
               </div>
@@ -483,30 +488,63 @@ body{background:#f1f5f9;}
 <script src="/assets/js/main.js"></script>
 <script>
 // ── CREDENTIALS ───────────────────────────────────────────────────────
-const ADMIN_EMAIL = '2mins.facts@gmail.com';
-const ADMIN_PASS  = 'Ultimate@123#';
+// ── SECURITY: Password stored as SHA-256 hash — never in plain text ──
+// To change password: run SHA-256 of new password and update the hash below
+const ADMIN_EMAIL      = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t'); // base64 encoded
+const ADMIN_PASS_HASH  = 'c8d92a753c3020bd10832c8aa7e572e71951cdae7d74342d28b7168579d77287';
+
+async function hashPassword(pass) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(pass));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 // ── LOGIN ─────────────────────────────────────────────────────────────
-function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
+async function doLogin() {
+  // Rate limit: max 5 attempts per 15 minutes
+  const attempts = JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"since":0}');
+  if (attempts.count >= 5 && (Date.now() - attempts.since) < 900000) {
+    const wait = Math.ceil((900000 - (Date.now() - attempts.since)) / 60000);
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginError').textContent = `Too many attempts. Try again in ${wait} minute(s).`;
+    return;
+  }
+  if ((Date.now() - attempts.since) > 900000) {
+    sessionStorage.setItem('login_attempts', JSON.stringify({count:0, since:Date.now()}));
+  }
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass  = document.getElementById('loginPass').value;
   const btn   = document.getElementById('loginBtn');
   const err   = document.getElementById('loginError');
 
+  if (!email || !pass) {
+    err.style.display = 'block';
+    err.textContent = 'Please enter your email and password.';
+    return;
+  }
+
   btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite"></span>';
   btn.disabled = true;
+  err.style.display = 'none';
 
-  setTimeout(() => {
-    if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
-      localStorage.setItem('oj_admin_session', JSON.stringify({ email, loginAt: Date.now() }));
-      showDashboard();
-    } else {
-      err.style.display = 'block';
-      err.textContent = 'Wrong email or password. Try again.';
-      btn.innerHTML = 'Sign In to Admin Panel →';
-      btn.disabled = false;
-    }
-  }, 800);
+  // Hash the entered password and compare — actual password never compared in plain text
+  const enteredHash = await hashPassword(pass);
+
+  if (email === ADMIN_EMAIL && enteredHash === ADMIN_PASS_HASH) {
+    const sessionToken = await hashPassword(email + Date.now().toString().slice(0,-4));
+      localStorage.setItem('oj_admin_session', JSON.stringify({ emailHash: await hashPassword(email), token: sessionToken, loginAt: Date.now() }));
+    showDashboard();
+  } else {
+    const att = JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"since":0}');
+    att.count = (att.count||0) + 1;
+    if (!att.since) att.since = Date.now();
+    sessionStorage.setItem('login_attempts', JSON.stringify(att));
+    const rem = Math.max(0, 5 - att.count);
+    err.style.display = 'block';
+    err.textContent = `Wrong email or password. ${rem > 0 ? rem + ' attempts remaining.' : 'Account locked for 15 minutes.'}`;
+    btn.innerHTML = 'Sign In to Admin Panel →';
+    btn.disabled = false;
+  }
 }
 
 function doLogout() {
@@ -526,8 +564,18 @@ function showDashboard() {
 // Check session on load
 window.addEventListener('DOMContentLoaded', () => {
   const session = JSON.parse(localStorage.getItem('oj_admin_session') || 'null');
-  if (session && (Date.now() - session.loginAt) < 86400000) {
-    showDashboard();
+  // 8-hour session timeout
+  if (session && session.emailHash && (Date.now() - session.loginAt) < 28800000) {
+    // Verify session belongs to current admin
+    hashPassword(ADMIN_EMAIL).then(expectedHash => {
+      if (session.emailHash === expectedHash) {
+        showDashboard();
+      } else {
+        localStorage.removeItem('oj_admin_session');
+      }
+    });
+  } else if (session) {
+    localStorage.removeItem('oj_admin_session');
   }
   // Enter key on login
   document.getElementById('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });

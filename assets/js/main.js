@@ -91,3 +91,23 @@ window.copyText = function(text, btn) {
     setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
   });
 };
+
+// ── EMAIL DECODER (security: emails stored as base64, decoded at runtime) ──
+window.addEventListener('DOMContentLoaded', () => {
+  // Decode all data-email attributes into mailto: links
+  document.querySelectorAll('[data-email]').forEach(el => {
+    try {
+      const email = atob(el.dataset.email);
+      if (el.tagName === 'A') {
+        el.href = 'mailto:' + email;
+        if (!el.textContent.includes('@')) el.textContent = email;
+      } else {
+        el.textContent = email;
+      }
+    } catch(e) {}
+  });
+  // Decode data-email-text (display only, no link)
+  document.querySelectorAll('[data-email-text]').forEach(el => {
+    try { el.textContent = atob(el.dataset.emailText); } catch(e) {}
+  });
+});
