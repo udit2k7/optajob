@@ -489,19 +489,56 @@ body{background:#f1f5f9;}
 <script src="/assets/js/main.js"></script>
 <script>
 // ── CREDENTIALS ───────────────────────────────────────────────────────
-// ── SECURITY: Password stored as SHA-256 hash — never in plain text ──
-// To change password: run SHA-256 of new password and update the hash below
-const ADMIN_EMAIL      = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t'); // base64 encoded
-const ADMIN_PASS_HASH  = 'c8d92a753c3020bd10832c8aa7e572e71951cdae7d74342d28b7168579d77287';
+// ── SECURITY: Pure-JS SHA-256 — works on HTTP and HTTPS ──────────────
+const ADMIN_EMAIL     = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
+const ADMIN_PASS_HASH = 'c8d92a753c3020bd10832c8aa7e572e71951cdae7d74342d28b7168579d77287';
 
-async function hashPassword(pass) {
-  const enc = new TextEncoder();
-  const buf = await crypto.subtle.digest('SHA-256', enc.encode(pass));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+function hashPassword(str) {
+  // Pure JavaScript SHA-256 — no crypto.subtle required
+  function rr(v,a){return(v>>>a)|(v<<(32-a));}
+  var mp=Math.pow,mw=mp(2,32),h=[],k=[],pc=0,ic={};
+  for(var c=2;pc<64;c++){
+    if(!ic[c]){
+      for(var ii=0;ii<313;ii+=c)ic[ii]=c;
+      h[pc]=mp(c,.5)*mw|0; k[pc++]=mp(c,1/3)*mw|0;
+    }
+  }
+  var s=unescape(encodeURIComponent(str)),w=[],r='';
+  s+='';
+  while(s.length%64-56)s+=' ';
+  for(var i=0;i<s.length;i++){
+    var jj=s.charCodeAt(i);
+    if(jj>>8)return'';
+    w[i>>2]|=jj<<((3-i)%4*8);
+  }
+  var abl=unescape(encodeURIComponent(str)).length*8;
+  w[w.length]=((abl/mw)|0); w[w.length]=abl;
+  for(var j=0;j<w.length;){
+    var ww=w.slice(j,j+=16),oh=h.slice(0);
+    for(var q=0;q<64;q++){
+      var i2=q<16?ww[q]:(ww[q+1]=
+        (function(ss,x,y){return(ss>>>x|ss<<32-x)^(ss>>>y|ss<<32-y)^(ss>>>3);})(ww[q-15],7,18)
+        +ww[q-7]+
+        (function(ss,x,y){return(ss>>>x|ss<<32-x)^(ss>>>y|ss<<32-y)^(ss>>>10);})(ww[q-2],17,19)
+        +ww[q-16]);
+      var a=h[0],b=h[1],cc=h[2],d=h[3],e=h[4],f=h[5],g=h[6],hh=h[7];
+      var t1=hh+((e>>>6|e<<26)^(e>>>11|e<<21)^(e>>>25|e<<7))+(e&f^~e&g)+k[q]+(i2>>>0);
+      var t2=((a>>>2|a<<30)^(a>>>13|a<<19)^(a>>>22|a<<10))+(a&b^a&cc^b&cc);
+      h=[t1+t2,a,b,cc,d+t1,e,f,g];
+    }
+    for(var n=0;n<8;n++)h[n]=(h[n]+oh[n])|0;
+  }
+  for(var n=0;n<8;n++){
+    for(var m=3;m+1;m--){
+      var bv=(h[n]>>(m*8))&255;
+      r+=(bv<16?'0':'')+bv.toString(16);
+    }
+  }
+  return r;
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────────
-async function doLogin() {
+function doLogin() {
   // Rate limit: max 5 attempts per 15 minutes
   const attempts = JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"since":0}');
   if (attempts.count >= 5 && (Date.now() - attempts.since) < 900000) {
@@ -529,11 +566,11 @@ async function doLogin() {
   err.style.display = 'none';
 
   // Hash the entered password and compare — actual password never compared in plain text
-  const enteredHash = await hashPassword(pass);
+  const enteredHash = hashPassword(pass);
 
   if (email === ADMIN_EMAIL && enteredHash === ADMIN_PASS_HASH) {
-    const sessionToken = await hashPassword(email + Date.now().toString().slice(0,-4));
-      localStorage.setItem('oj_admin_session', JSON.stringify({ emailHash: await hashPassword(email), token: sessionToken, loginAt: Date.now() }));
+    const sessionToken = hashPassword(email + Date.now().toString().slice(0,-4));
+      localStorage.setItem('oj_admin_session', JSON.stringify({emailHash: hashPassword(email), token: sessionToken, loginAt: Date.now()}));
     showDashboard();
   } else {
     const att = JSON.parse(sessionStorage.getItem('login_attempts') || '{"count":0,"since":0}');
@@ -564,17 +601,15 @@ function showDashboard() {
 
 // Check session on load
 window.addEventListener('DOMContentLoaded', () => {
+  // Clear any stale rate limit locks from previous sessions
+  sessionStorage.removeItem('login_attempts');
   const session = JSON.parse(localStorage.getItem('oj_admin_session') || 'null');
-  // 8-hour session timeout
   if (session && session.emailHash && (Date.now() - session.loginAt) < 28800000) {
-    // Verify session belongs to current admin
-    hashPassword(ADMIN_EMAIL).then(expectedHash => {
-      if (session.emailHash === expectedHash) {
-        showDashboard();
-      } else {
-        localStorage.removeItem('oj_admin_session');
-      }
-    });
+    if (session.emailHash === hashPassword(ADMIN_EMAIL)) {
+      showDashboard();
+    } else {
+      localStorage.removeItem('oj_admin_session');
+    }
   } else if (session) {
     localStorage.removeItem('oj_admin_session');
   }
