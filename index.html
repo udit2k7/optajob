@@ -18,10 +18,10 @@
 .hero-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
 .particle{position:absolute;width:3px;height:3px;border-radius:50%;background:#5dd4b8;opacity:0;animation:particleFloat 8s ease-in-out infinite;}
 @keyframes particleFloat{0%{opacity:0;transform:translateY(100vh) scale(0);}10%{opacity:.6;}90%{opacity:.3;}100%{opacity:0;transform:translateY(-20vh) scale(1.5);}}
-.trust-bar{background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);padding:20px 0;overflow:hidden;}
-.trust-inner{display:flex;align-items:center;gap:48px;animation:scroll 20s linear infinite;white-space:nowrap;}
-.trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.5);font-size:.85rem;font-weight:500;flex-shrink:0;}
-.trust-dot{width:6px;height:6px;border-radius:50%;background:#3dbfa0;}
+.trust-bar{background:#0a1628;border-top:2px solid rgba(61,191,160,.25);border-bottom:2px solid rgba(61,191,160,.25);padding:18px 0;overflow:hidden;}
+.trust-inner{display:flex;align-items:center;gap:48px;animation:scroll 28s linear infinite;white-space:nowrap;}
+.trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.85);font-size:.88rem;font-weight:600;flex-shrink:0;letter-spacing:.01em;}
+.trust-dot{width:7px;height:7px;border-radius:50%;background:#3dbfa0;box-shadow:0 0 6px rgba(61,191,160,.6);flex-shrink:0;}
 @keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
 .pricing-card{border-radius:24px;padding:36px;border:1px solid rgba(0,0,0,.08);transition:all .25s;}
 .pricing-card:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(0,0,0,.12);}
@@ -102,7 +102,7 @@
     <div class="hero-grid">
       <div class="hero-content">
         <div class="hero-eyebrow">
-          <span class="badge badge-white">🇮🇳 Made for India · Made by Udit Tandon</span>
+          <span class="badge badge-white">🚀 Now Live · Made for India by Udit Tandon</span>
         </div>
         <h1 class="hero-title">
           Choose Your <span>Job</span><br>with AI Precision
@@ -119,16 +119,16 @@
         </div>
         <div class="hero-stats">
           <div>
-            <div class="hero-stat-num"><span data-target="50000" data-suffix="+">50,000+</span></div>
-            <div class="hero-stat-lbl">Active Users</div>
+            <div class="hero-stat-num"><span data-target="1200" data-suffix="+">1,200+</span></div>
+            <div class="hero-stat-lbl">Beta Users</div>
           </div>
           <div>
-            <div class="hero-stat-num"><span data-target="500" data-suffix="+">500+</span></div>
-            <div class="hero-stat-lbl">Jobs Found Daily</div>
+            <div class="hero-stat-num"><span data-target="200" data-suffix="+">200+</span></div>
+            <div class="hero-stat-lbl">Jobs Indexed Daily</div>
           </div>
           <div>
-            <div class="hero-stat-num"><span data-target="95" data-suffix="%">95%</span></div>
-            <div class="hero-stat-lbl">Match Accuracy</div>
+            <div class="hero-stat-num"><span data-target="9" data-suffix="">9</span></div>
+            <div class="hero-stat-lbl">Contact Finder Vendors</div>
           </div>
         </div>
       </div>
@@ -197,19 +197,26 @@
 </section>
 
 <!-- TRUST BAR -->
+<div style="height:3px;background:linear-gradient(90deg,transparent,#3dbfa0,#1b3f7d,#3dbfa0,transparent);"></div>
 <div class="trust-bar">
   <div class="trust-inner">
-    <div class="trust-item"><span class="trust-dot"></span>Real jobs from LinkedIn · Indeed · Glassdoor</div>
-    <div class="trust-item"><span class="trust-dot"></span>AI resume tailoring in seconds</div>
-    <div class="trust-item"><span class="trust-dot"></span>Find HR emails with 9 vendor integrations</div>
-    <div class="trust-item"><span class="trust-dot"></span>3 free credits daily for 14 days</div>
-    <div class="trust-item"><span class="trust-dot"></span>Android 14, 15, 16 ready</div>
-    <div class="trust-item"><span class="trust-dot"></span>Made in India for India</div>
-    <!-- Duplicate for seamless scroll -->
-    <div class="trust-item"><span class="trust-dot"></span>Real jobs from LinkedIn · Indeed · Glassdoor</div>
-    <div class="trust-item"><span class="trust-dot"></span>AI resume tailoring in seconds</div>
-    <div class="trust-item"><span class="trust-dot"></span>Find HR emails with 9 vendor integrations</div>
-    <div class="trust-item"><span class="trust-dot"></span>3 free credits daily for 14 days</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Real jobs from LinkedIn, Indeed &amp; Glassdoor</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ AI resume tailoring in seconds</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Find HR emails — 9 vendor integrations</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ 3 free credits every day for 14 days</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Salary filter: Under ₹3L to ₹25L+</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Android 14, 15 &amp; 16 supported</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ ATS score checker before you apply</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Made in India 🇮🇳 for India</div>
+    <!-- Duplicate for seamless loop -->
+    <div class="trust-item"><span class="trust-dot"></span>✦ Real jobs from LinkedIn, Indeed &amp; Glassdoor</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ AI resume tailoring in seconds</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Find HR emails — 9 vendor integrations</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ 3 free credits every day for 14 days</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Salary filter: Under ₹3L to ₹25L+</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Android 14, 15 &amp; 16 supported</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ ATS score checker before you apply</div>
+    <div class="trust-item"><span class="trust-dot"></span>✦ Made in India 🇮🇳 for India</div>
   </div>
 </div>
 
@@ -218,16 +225,16 @@
   <div class="container">
     <div class="stats-inner">
       <div class="stat-item fade-up">
-        <div class="stat-num" data-target="50000" data-suffix="+">50,000+</div>
-        <div class="stat-label">Job Seekers Helped</div>
+        <div class="stat-num" data-target="1200" data-suffix="+">1,200+</div>
+        <div class="stat-label">Beta Users</div>
       </div>
       <div class="stat-item fade-up">
-        <div class="stat-num" data-target="500" data-suffix="+">500+</div>
-        <div class="stat-label">Real Jobs Daily</div>
+        <div class="stat-num" data-target="200" data-suffix="+">200+</div>
+        <div class="stat-label">Jobs Indexed Daily</div>
       </div>
       <div class="stat-item fade-up">
-        <div class="stat-num" data-target="95" data-suffix="%">95%</div>
-        <div class="stat-label">Resume Match Accuracy</div>
+        <div class="stat-num" data-target="14" data-suffix="">14</div>
+        <div class="stat-label">Days Free Credits</div>
       </div>
       <div class="stat-item fade-up">
         <div class="stat-num" data-target="9" data-suffix="">9</div>
@@ -250,7 +257,7 @@
         <div class="feature-icon">🔍</div>
         <div class="feature-title">Real Job Listings</div>
         <div class="feature-desc">Live jobs from LinkedIn, Indeed, Glassdoor, and more — all searched in one tap. Never see an expired or fake listing again.</div>
-        <span class="feature-tag">→ 500+ new jobs daily</span>
+        <span class="feature-tag">→ 200+ new jobs indexed daily</span>
       </div>
       <div class="feature-card fade-up">
         <div class="feature-icon">✍️</div>
@@ -451,7 +458,7 @@
   <div class="container" style="position:relative;z-index:1;">
     <div class="badge badge-white" style="margin-bottom:20px;display:inline-flex;">🚀 Available on Android</div>
     <h2>Download OptaJob Free Today</h2>
-    <p>Join thousands of Indian job seekers who found their dream job with OptaJob.</p>
+    <p>Join our growing community of Indian job seekers. Download free and start today.</p>
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:24px;">
       <div class="download-badge">
         <div class="download-badge-icon">▶</div>
