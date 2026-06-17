@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OptaJob Admin Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230e2550' rx='20'/><line x1='20' y1='80' x2='70' y2='24' stroke='%231b3f7d' stroke-width='14' stroke-linecap='round'/><circle cx='44' cy='26' r='12' fill='%235dd4b8'/></svg>">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+body{background:#f1f5f9;}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--grad-hero);padding:24px;}
+.login-card{background:white;border-radius:32px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 40px 80px rgba(0,0,0,.35);}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo-text{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--navy);}
+.login-logo-text span{color:var(--teal);}
+.login-title{font-size:1.3rem;font-weight:700;color:var(--navy);text-align:center;margin-bottom:6px;}
+.login-sub{font-size:.88rem;color:var(--grey-md);text-align:center;margin-bottom:28px;}
+.admin-wrap{display:flex;min-height:100vh;}
+.sidebar{width:260px;flex-shrink:0;background:var(--navy-xdk);display:flex;flex-direction:column;padding:0;position:fixed;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:24px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px;}
+.sidebar-logo-text{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:white;}
+.sidebar-logo-text span{color:var(--teal);}
+.sidebar-section{padding:20px 16px 8px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 16px;margin:2px 8px;border-radius:10px;color:rgba(255,255,255,.6);font-size:.88rem;font-weight:500;cursor:pointer;transition:var(--trans);border:none;background:none;width:calc(100% - 16px);text-align:left;}
+.nav-item:hover{color:white;background:rgba(255,255,255,.06);}
+.nav-item.active{color:var(--teal);background:rgba(61,191,160,.1);}
+.nav-item-icon{font-size:1.1rem;width:20px;text-align:center;flex-shrink:0;}
+.main-area{margin-left:260px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:white;padding:16px 28px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:var(--shadow-sm);}
+.topbar-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--navy);}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--grey-dk);}
+.topbar-avatar{width:36px;height:36px;border-radius:50%;background:var(--grad-teal);display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:.9rem;}
+.content{padding:28px;}
+.page{display:none;}
+.page.active{display:block;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px;}
+.stat-card{background:white;border-radius:16px;padding:20px;border:1px solid rgba(0,0,0,.06);box-shadow:var(--shadow-sm);}
+.stat-card-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:14px;}
+.stat-card-num{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--navy);line-height:1;}
+.stat-card-label{font-size:.8rem;color:var(--grey-md);font-weight:500;margin-top:4px;}
+.stat-card-change{font-size:.75rem;font-weight:600;margin-top:6px;}
+.stat-card-change.up{color:#16a34a;}
+.stat-card-change.down{color:#dc2626;}
+.card-section{background:white;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06);margin-bottom:24px;}
+.card-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,.06);}
+.card-section-title{font-size:1rem;font-weight:700;color:var(--navy);}
+.api-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(0,0,0,.05);}
+.api-row:last-child{border-bottom:none;}
+.api-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:var(--grey-lt);flex-shrink:0;}
+.api-info{flex:1;}
+.api-name{font-size:.92rem;font-weight:600;color:var(--navy);}
+.api-detail{font-size:.78rem;color:var(--grey-md);margin-top:2px;}
+.api-status{display:flex;align-items:center;gap:8px;}
+.usage-bar{height:6px;background:var(--grey-lt);border-radius:3px;overflow:hidden;width:80px;}
+.usage-fill{height:100%;border-radius:3px;background:var(--grad-teal);}
+.usage-fill.warn{background:linear-gradient(90deg,#f59e0b,#d97706);}
+.usage-fill.danger{background:linear-gradient(90deg,#ef4444,#dc2626);}
+.input-group{display:flex;gap:8px;margin-top:12px;}
+.input-group .form-input{flex:1;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;display:none;}
+.modal-overlay.open{display:flex;}
+.modal-card{background:white;border-radius:24px;padding:32px;width:100%;max-width:480px;box-shadow:0 40px 80px rgba(0,0,0,.25);}
+.modal-title{font-size:1.15rem;font-weight:700;color:var(--navy);margin-bottom:20px;}
+.btn-danger{background:#ef4444;color:white;}
+.btn-danger:hover{background:#dc2626;}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.05);}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:5px;}
+.activity-text{font-size:.88rem;color:var(--grey-dk);line-height:1.5;}
+.activity-time{font-size:.75rem;color:var(--grey-md);margin-top:2px;}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:var(--grey-md);border-radius:100px;transition:var(--trans);}
+.toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:white;transition:var(--trans);}
+.toggle input:checked + .toggle-slider{background:var(--teal);}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px);}
+.notif-item{display:flex;align-items:flex-start;gap:14px;padding:14px;border-radius:12px;background:var(--off-white);margin-bottom:10px;border:1px solid transparent;}
+.notif-item.unread{background:rgba(61,191,160,.06);border-color:rgba(61,191,160,.15);}
+.notif-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr);}.sidebar{transform:translateX(-100%);}.main-area{margin-left:0;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="52" height="52" viewBox="0 0 100 100" fill="none" style="margin:0 auto 12px;">
+        <rect width="100" height="100" rx="24" fill="#0e2550"/>
+        <line x1="20" y1="80" x2="70" y2="24" stroke="#1b3f7d" stroke-width="13" stroke-linecap="round"/>
+        <polygon points="70,24 56,32 64,44" fill="#1b3f7d"/>
+        <circle cx="44" cy="26" r="12" fill="#5dd4b8"/>
+        <path d="M44 38 C28 48 30 68 46 74" stroke="#3dbfa0" stroke-width="10" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="login-logo-text">opta<span>job</span></div>
+    </div>
+    <div class="login-title">Admin Dashboard</div>
+    <div class="login-sub">Sign in with your admin credentials</div>
+    <div id="loginError" class="alert alert-error" style="display:none;"></div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" id="loginEmail" class="form-input" placeholder="2mins.facts@gmail.com" value="">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" id="loginPass" class="form-input" placeholder="••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-navy btn-lg" style="width:100%;margin-top:8px;" onclick="doLogin()" id="loginBtn">
+      Sign In to Admin Panel →
+    </button>
+    <div style="margin-top:20px;padding:12px;background:#fef3c7;border-radius:10px;font-size:.82rem;color:#92400e;text-align:center;">
+      🔐 Admin access only. All activity is logged.
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <a href="/" style="font-size:.85rem;color:var(--grey-md);">← Back to optajob.com</a>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="adminDashboard" style="display:none;">
+  <div class="admin-wrap">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <svg width="32" height="32" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="16" fill="#0e2550"/><line x1="20" y1="80" x2="70" y2="24" stroke="#1b3f7d" stroke-width="13" stroke-linecap="round"/><polygon points="70,24 56,32 64,44" fill="#1b3f7d"/><circle cx="44" cy="26" r="12" fill="#5dd4b8"/></svg>
+        <span class="sidebar-logo-text">opta<span>job</span></span>
+      </div>
+      <div class="sidebar-section">Main</div>
+      <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-item-icon">📊</span>Dashboard</button>
+      <button class="nav-item" onclick="showPage('users',this)"><span class="nav-item-icon">👤</span>Users</button>
+      <button class="nav-item" onclick="showPage('notifications',this)"><span class="nav-item-icon">🔔</span>Notifications</button>
+      <div class="sidebar-section">APIs</div>
+      <button class="nav-item" onclick="showPage('jobapis',this)"><span class="nav-item-icon">🔌</span>Job Search APIs</button>
+      <button class="nav-item" onclick="showPage('emailapis',this)"><span class="nav-item-icon">📧</span>Email APIs</button>
+      <button class="nav-item" onclick="showPage('adnetworks',this)"><span class="nav-item-icon">📱</span>Ad Networks</button>
+      <div class="sidebar-section">Settings</div>
+      <button class="nav-item" onclick="showPage('credits',this)"><span class="nav-item-icon">💳</span>Credit Days</button>
+      <button class="nav-item" onclick="showPage('admins',this)"><span class="nav-item-icon">🛡</span>Admin Users</button>
+      <div style="margin-top:auto;padding:16px;">
+        <button class="btn btn-danger btn-sm" style="width:100%;" onclick="doLogout()">Sign Out</button>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.25);text-align:center;margin-top:10px;">OptaJob Admin · Made by Udit Tandon</div>
+      </div>
+    </div>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <div class="topbar">
+        <div class="topbar-title" id="pageTitle">Dashboard</div>
+        <div class="topbar-user">
+          <span id="adminEmailDisplay" style="color:var(--grey-md);font-size:.82rem;"></span>
+          <div class="topbar-avatar">U</div>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- DASHBOARD PAGE -->
+        <div class="page active" id="page-dashboard">
+          <div class="alert alert-info" style="margin-bottom:24px;">
+            💡 <strong>Sync Note:</strong> API keys configured here are stored in your browser's local storage. To sync with the app across devices, connect Supabase (see Pending Tasks in the PDF guide).
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(61,191,160,.1);">👤</div>
+              <div class="stat-card-num" id="dash-users">0</div>
+              <div class="stat-card-label">Registered Users</div>
+              <div class="stat-card-change up">+0 this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(27,63,125,.1);">🔍</div>
+              <div class="stat-card-num" id="dash-searches">0</div>
+              <div class="stat-card-label">Searches Today</div>
+              <div class="stat-card-change up">API quota used</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(245,158,11,.1);">🎯</div>
+              <div class="stat-card-num" id="dash-interviews">0</div>
+              <div class="stat-card-label">Interviews Got</div>
+              <div class="stat-card-change up">All time</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon" style="background:rgba(34,197,94,.1);">🎉</div>
+              <div class="stat-card-num" id="dash-offers">0</div>
+              <div class="stat-card-label">Job Offers</div>
+              <div class="stat-card-change up">Via OptaJob</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+            <div class="card-section">
+              <div class="card-section-header">
+                <div class="card-section-title">📊 API Usage Today</div>
+              </div>
+              <div id="apiUsageSummary">
+                <p style="color:var(--grey-md);font-size:.9rem;text-align:center;padding:20px 0;">No APIs configured yet. Go to Job Search APIs to add one.</p>
+              </div>
+            </div>
+            <div class="card-section">
+              <div class="card-section-header">
+                <div class="card-section-title">🔔 Recent Notifications</div>
+              </div>
+              <div id="recentNotifs">
+                <p style="color:var(--grey-md);font-size:.9rem;text-align:center;padding:20px 0;">No notifications yet.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JOB APIS PAGE -->
+        <div class="page" id="page-jobapis">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">🔌 Job Search API Rotation</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddJobAPI()">+ Add API</button>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:16px;">
+              The app rotates between APIs every <strong id="switchEveryDisplay">10</strong> searches. Change rotation frequency:
+              <select onchange="updateSwitchEvery(this.value)" id="switchEverySelect" style="margin-left:8px;padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;font-size:.85rem;">
+                <option value="5">Every 5</option>
+                <option value="10" selected>Every 10</option>
+                <option value="20">Every 20</option>
+                <option value="50">Every 50</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--teal);" id="totalApiCap">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">Daily Capacity</div>
+              </div>
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--navy);" id="totalApiUsed">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">Used Today</div>
+              </div>
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--teal);" id="activeApis">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">Active APIs</div>
+              </div>
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--grey-md);" id="totalAllTime">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">All Time Searches</div>
+              </div>
+            </div>
+            <div id="jobApiList"><p style="color:var(--grey-md);text-align:center;padding:32px;">No job APIs added yet. Click "+ Add API" to connect JSearch or Adzuna.</p></div>
+          </div>
+        </div>
+
+        <!-- EMAIL APIS PAGE -->
+        <div class="page" id="page-emailapis">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">📧 Email Provider Rotation</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddEmailAPI()">+ Add Provider</button>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:16px;">
+              Email providers send verification codes to users. Add at least one to enable real email sending. Without it, codes are shown on-screen only (dev mode).
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--teal);" id="emailTotalCap">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">Daily Email Capacity</div>
+              </div>
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--navy);" id="emailTodayUsed">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">Sent Today</div>
+              </div>
+              <div style="background:var(--off-white);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:800;color:var(--teal);" id="emailActiveCount">0</div>
+                <div style="font-size:.75rem;color:var(--grey-md);">Active Providers</div>
+              </div>
+            </div>
+            <div style="margin-bottom:20px;">
+              <div style="font-weight:700;color:var(--navy);font-size:.9rem;margin-bottom:12px;">Free Email Providers (click to pre-fill)</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div onclick="prefillEmail('brevo','Brevo',300)" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#3dbfa0'" onmouseout="this.style.borderColor='#e2e8f0'">
+                  <div style="font-weight:700;font-size:.88rem;color:var(--navy);">Brevo</div>
+                  <div style="font-size:.75rem;color:#16a34a;">300/day FREE ⭐ Best</div>
+                </div>
+                <div onclick="prefillEmail('mailjet','Mailjet',200)" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#3dbfa0'" onmouseout="this.style.borderColor='#e2e8f0'">
+                  <div style="font-weight:700;font-size:.88rem;color:var(--navy);">Mailjet</div>
+                  <div style="font-size:.75rem;color:#b45309;">200/day free</div>
+                </div>
+                <div onclick="prefillEmail('sendgrid','SendGrid',100)" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#3dbfa0'" onmouseout="this.style.borderColor='#e2e8f0'">
+                  <div style="font-weight:700;font-size:.88rem;color:var(--navy);">SendGrid</div>
+                  <div style="font-size:.75rem;color:#b45309;">100/day free</div>
+                </div>
+                <div onclick="prefillEmail('resend','Resend',100)" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#3dbfa0'" onmouseout="this.style.borderColor='#e2e8f0'">
+                  <div style="font-weight:700;font-size:.88rem;color:var(--navy);">Resend</div>
+                  <div style="font-size:.75rem;color:#b45309;">100/day free</div>
+                </div>
+                <div onclick="prefillEmail('elastic','Elasticemail',100)" style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#3dbfa0'" onmouseout="this.style.borderColor='#e2e8f0'">
+                  <div style="font-weight:700;font-size:.88rem;color:var(--navy);">Elasticemail</div>
+                  <div style="font-size:.75rem;color:#b45309;">100/day free</div>
+                </div>
+              </div>
+            </div>
+            <div id="emailApiList"><p style="color:var(--grey-md);text-align:center;padding:32px;">No email providers configured yet.</p></div>
+          </div>
+        </div>
+
+        <!-- AD NETWORKS PAGE -->
+        <div class="page" id="page-adnetworks">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">📱 Ad Network Configuration</div>
+            </div>
+            <div class="alert alert-warning" style="margin-bottom:16px;">
+              ⚠ Apply for Google AdMob at admob.google.com FIRST. Approval takes 7-14 days. Start this today.
+            </div>
+            <div id="adNetworkList"></div>
+          </div>
+        </div>
+
+        <!-- CREDIT DAYS PAGE -->
+        <div class="page" id="page-credits">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">💳 Credit Days Manager</div>
+            </div>
+            <div class="alert alert-info" style="margin-bottom:16px;">
+              Set how many days each user gets daily free credits. Default is 14 days. Changing this sends an in-app notification to affected users.
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+              <div>
+                <label class="form-label">Set Days For Selected Users</label>
+                <select id="newCreditDays" class="form-input">
+                  <option value="7">7 days</option>
+                  <option value="10">10 days</option>
+                  <option value="14" selected>14 days (default)</option>
+                  <option value="21">21 days</option>
+                  <option value="30">30 days</option>
+                  <option value="60">60 days</option>
+                  <option value="90">90 days</option>
+                  <option value="9999">Unlimited</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button class="btn btn-primary btn-sm" onclick="applyCreditDays()">Apply to Selected</button>
+                <button class="btn btn-ghost-navy btn-sm" onclick="selectAllUsers()">Select All</button>
+              </div>
+            </div>
+            <div id="usersList"><p style="color:var(--grey-md);text-align:center;padding:32px;">No users registered yet. Users will appear here after registration.</p></div>
+          </div>
+        </div>
+
+        <!-- ADMINS PAGE -->
+        <div class="page" id="page-admins">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">🛡 Admin Users</div>
+            </div>
+            <div style="margin-bottom:20px;">
+              <label class="form-label">Primary Admin</label>
+              <div class="api-row" style="background:var(--off-white);border-radius:10px;padding:14px;">
+                <div class="api-icon" style="background:rgba(61,191,160,.15);">👑</div>
+                <div class="api-info">
+                  <div class="api-name">Udit Tandon (Primary)</div>
+                  <div class="api-detail">2mins.facts@gmail.com · Cannot be removed</div>
+                </div>
+                <span class="badge badge-teal">Primary Admin</span>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Add Team Member as Admin</label>
+              <div style="display:flex;gap:8px;">
+                <input type="email" id="newAdminEmail" class="form-input" placeholder="teammate@email.com">
+                <button class="btn btn-navy btn-sm" onclick="addAdmin()">Add Admin</button>
+              </div>
+              <p style="font-size:.82rem;color:var(--grey-md);margin-top:8px;">They will get admin access when they log into the OptaJob app with this email.</p>
+            </div>
+            <div id="adminsList" style="margin-top:16px;"></div>
+          </div>
+        </div>
+
+        <!-- USERS PAGE -->
+        <div class="page" id="page-users">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">👤 Registered Users</div>
+            </div>
+            <div class="alert alert-info">Connect Supabase to see real-time user data. Currently showing local data only.</div>
+            <div id="fullUsersList" style="margin-top:16px;"><p style="color:var(--grey-md);text-align:center;padding:32px;">No users yet.</p></div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATIONS PAGE -->
+        <div class="page" id="page-notifications">
+          <div class="card-section">
+            <div class="card-section-header">
+              <div class="card-section-title">🔔 System Notifications</div>
+              <button class="btn btn-ghost-navy btn-sm" onclick="markAllNotifsRead()">Mark all read</button>
+            </div>
+            <div id="allNotifsList"><p style="color:var(--grey-md);text-align:center;padding:32px;">No notifications. You'll be alerted when APIs hit 60% of daily quota.</p></div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main-area -->
+  </div><!-- /admin-wrap -->
+</div><!-- /adminDashboard -->
+
+<!-- ADD JOB API MODAL -->
+<div class="modal-overlay" id="addJobAPIModal">
+  <div class="modal-card">
+    <div class="modal-title">➕ Add Job Search API</div>
+    <div class="form-group">
+      <label class="form-label">Provider Type</label>
+      <select id="newApiType" class="form-input" onchange="updateApiPlaceholder()">
+        <option value="rapidapi">RapidAPI (JSearch) — 500/month free</option>
+        <option value="adzuna">Adzuna — 1,000/month free</option>
+        <option value="indeed">Indeed Publisher API</option>
+        <option value="reed">Reed.co.uk</option>
+        <option value="jooble">Jooble</option>
+        <option value="custom">Custom API</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Display Name</label>
+      <input type="text" id="newApiName" class="form-input" placeholder="e.g. RapidAPI Account 1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input type="text" id="newApiKey" class="form-input" placeholder="Paste your API key">
+    </div>
+    <div class="form-group" id="adzunaAppIdGroup" style="display:none;">
+      <label class="form-label">App ID (Adzuna only)</label>
+      <input type="text" id="newApiKey2" class="form-input" placeholder="Adzuna App ID">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Daily Limit</label>
+      <input type="number" id="newApiLimit" class="form-input" value="500">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost-navy" style="flex:1;" onclick="closeModal('addJobAPIModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="saveJobAPI()">Save API</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD EMAIL API MODAL -->
+<div class="modal-overlay" id="addEmailAPIModal">
+  <div class="modal-card">
+    <div class="modal-title">📧 Add Email Provider</div>
+    <div class="form-group">
+      <label class="form-label">Provider</label>
+      <select id="newEmailProvider" class="form-input">
+        <option value="brevo">Brevo (300/day free) ⭐</option>
+        <option value="mailjet">Mailjet (200/day free)</option>
+        <option value="sendgrid">SendGrid (100/day free)</option>
+        <option value="resend">Resend (100/day free)</option>
+        <option value="elastic">Elasticemail (100/day free)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Account Name</label>
+      <input type="text" id="newEmailName" class="form-input" placeholder="e.g. Brevo Account 1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input type="text" id="newEmailKey" class="form-input" placeholder="Paste your API key">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="form-group">
+      <div>
+        <label class="form-label">From Name</label>
+        <input type="text" id="newEmailFromName" class="form-input" placeholder="OptaJob" value="OptaJob">
+      </div>
+      <div>
+        <label class="form-label">From Email</label>
+        <input type="email" id="newEmailFromEmail" class="form-input" placeholder="noreply@optajob.com" value="noreply@optajob.com">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Daily Limit</label>
+      <input type="number" id="newEmailLimit" class="form-input" value="300">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-ghost-navy" style="flex:1;" onclick="closeModal('addEmailAPIModal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="saveEmailAPI()">Save Provider</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/main.js"></script>
+<script>
+// ── CREDENTIALS ───────────────────────────────────────────────────────
+const ADMIN_EMAIL = '2mins.facts@gmail.com';
+const ADMIN_PASS  = 'Ultimate@123#';
+
+// ── LOGIN ─────────────────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginError');
+
+  btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite"></span>';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+      localStorage.setItem('oj_admin_session', JSON.stringify({ email, loginAt: Date.now() }));
+      showDashboard();
+    } else {
+      err.style.display = 'block';
+      err.textContent = 'Wrong email or password. Try again.';
+      btn.innerHTML = 'Sign In to Admin Panel →';
+      btn.disabled = false;
+    }
+  }, 800);
+}
+
+function doLogout() {
+  localStorage.removeItem('oj_admin_session');
+  document.getElementById('adminDashboard').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+}
+
+function showDashboard() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminDashboard').style.display = 'block';
+  document.getElementById('adminEmailDisplay').textContent = ADMIN_EMAIL;
+  loadDashboard();
+  renderAdNetworks();
+}
+
+// Check session on load
+window.addEventListener('DOMContentLoaded', () => {
+  const session = JSON.parse(localStorage.getItem('oj_admin_session') || 'null');
+  if (session && (Date.now() - session.loginAt) < 86400000) {
+    showDashboard();
+  }
+  // Enter key on login
+  document.getElementById('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+});
+
+// ── NAVIGATION ────────────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  const titles = { dashboard:'Dashboard', users:'Users', notifications:'Notifications', jobapis:'Job Search APIs', emailapis:'Email APIs', adnetworks:'Ad Networks', credits:'Credit Days Manager', admins:'Admin Users' };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+  if (id === 'jobapis') renderJobAPIs();
+  if (id === 'emailapis') renderEmailAPIs();
+  if (id === 'credits') renderUsersList();
+  if (id === 'users') renderFullUsers();
+  if (id === 'notifications') renderAllNotifs();
+  if (id === 'admins') renderAdmins();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────
+function loadDashboard() {
+  const outcomes = JSON.parse(localStorage.getItem('hm_outcome_counts') || '{}');
+  const users = Object.keys(JSON.parse(localStorage.getItem('hm_udb') || '{}')).length;
+  document.getElementById('dash-users').textContent = users;
+  document.getElementById('dash-interviews').textContent = outcomes.interviews || 0;
+  document.getElementById('dash-offers').textContent = outcomes.offers || 0;
+  // API usage
+  const jobAPIs = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[]}');
+  const today = new Date().toDateString();
+  const totalCap = jobAPIs.providers.reduce((s,p) => s+(p.dailyLimit||0), 0);
+  const totalUsed = jobAPIs.providers.reduce((s,p) => s+(p.lastReset===today?p.usedToday||0:0), 0);
+  document.getElementById('dash-searches').textContent = totalUsed;
+  // API usage summary
+  const summaryEl = document.getElementById('apiUsageSummary');
+  if (jobAPIs.providers.length === 0) {
+    summaryEl.innerHTML = '<p style="color:var(--grey-md);font-size:.88rem;text-align:center;padding:16px 0;">No APIs configured. <a href="#" onclick="showPage(\'jobapis\',document.querySelectorAll(\'.nav-item\')[3]);return false;" style="color:var(--teal);">Add your first API →</a></p>';
+  } else {
+    summaryEl.innerHTML = jobAPIs.providers.map(p => {
+      const used = p.lastReset===today ? p.usedToday||0 : 0;
+      const pct = p.dailyLimit ? Math.round(used/p.dailyLimit*100) : 0;
+      return `<div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:4px;"><span>${p.name}</span><span style="color:${pct>=60?'#ef4444':'var(--teal)'};">${used}/${p.dailyLimit} (${pct}%)</span></div>
+        <div style="height:6px;background:var(--grey-lt);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pct>=60?'#ef4444':'#3dbfa0'};border-radius:3px;"></div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── JOB APIS ──────────────────────────────────────────────────────────
+function getJobAPIs() { return JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[],"switchEvery":10,"curIdx":0,"curCount":0}'); }
+function saveJobAPIs(data) { localStorage.setItem('hm_job_apis', JSON.stringify(data)); }
+
+function renderJobAPIs() {
+  const config = getJobAPIs();
+  const today = new Date().toDateString();
+  const totalCap = config.providers.reduce((s,p) => s+(p.dailyLimit||0), 0);
+  const totalUsed = config.providers.reduce((s,p) => s+(p.lastReset===today?p.usedToday||0:0), 0);
+  const active = config.providers.filter(p=>p.enabled&&p.key).length;
+  const allTime = config.providers.reduce((s,p) => s+(p.usedTotal||0), 0);
+  document.getElementById('totalApiCap').textContent = totalCap.toLocaleString('en-IN');
+  document.getElementById('totalApiUsed').textContent = totalUsed.toLocaleString('en-IN');
+  document.getElementById('activeApis').textContent = active;
+  document.getElementById('totalAllTime').textContent = allTime.toLocaleString('en-IN');
+  document.getElementById('switchEverySelect').value = config.switchEvery || 10;
+
+  const list = document.getElementById('jobApiList');
+  if (config.providers.length === 0) {
+    list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No job APIs added yet. Click "+ Add API" to get started.</p>';
+    return;
+  }
+  list.innerHTML = config.providers.map((p,i) => {
+    const used = p.lastReset===today ? p.usedToday||0 : 0;
+    const pct = p.dailyLimit ? Math.round(used/p.dailyLimit*100) : 0;
+    const isActive = config.providers.filter(x=>x.enabled&&x.key)[config.curIdx % Math.max(1,config.providers.filter(x=>x.enabled&&x.key).length)]?.id === p.id;
+    return `<div class="api-row">
+      <div class="api-icon">🔌</div>
+      <div class="api-info">
+        <div class="api-name">${p.name} ${isActive&&p.enabled?'<span style="font-size:.7rem;background:rgba(61,191,160,.15);color:#16a34a;padding:2px 8px;border-radius:8px;font-weight:700;">ACTIVE</span>':''}</div>
+        <div class="api-detail">${p.providerType} · ${p.dailyLimit}/day · Total: ${p.usedTotal||0}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <div class="usage-bar" style="width:120px;"><div class="usage-fill${pct>=80?' danger':pct>=60?' warn':''}" style="width:${pct}%;"></div></div>
+          <span style="font-size:.78rem;color:${pct>=60?'#dc2626':'var(--grey-md)'};">${used}/${p.dailyLimit} today (${pct}%)</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <label class="toggle"><input type="checkbox" ${p.enabled?'checked':''} onchange="toggleJobAPI(${i},this.checked)"><div class="toggle-slider"></div></label>
+        <button class="btn btn-ghost-navy btn-sm" onclick="deleteJobAPI(${i})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddJobAPI() {
+  document.getElementById('addJobAPIModal').classList.add('open');
+  document.getElementById('newApiType').value = 'rapidapi';
+  document.getElementById('newApiName').value = '';
+  document.getElementById('newApiKey').value = '';
+  document.getElementById('newApiLimit').value = '500';
+  document.getElementById('adzunaAppIdGroup').style.display = 'none';
+}
+
+function updateApiPlaceholder() {
+  const t = document.getElementById('newApiType').value;
+  document.getElementById('adzunaAppIdGroup').style.display = t==='adzuna' ? 'block' : 'none';
+  const limits = {rapidapi:500,adzuna:1000,indeed:250,reed:5000,jooble:1000,custom:500};
+  document.getElementById('newApiLimit').value = limits[t]||500;
+}
+
+function saveJobAPI() {
+  const config = getJobAPIs();
+  const newAPI = {
+    id: Date.now(),
+    name: document.getElementById('newApiName').value || 'API ' + (config.providers.length+1),
+    providerType: document.getElementById('newApiType').value,
+    key: document.getElementById('newApiKey').value,
+    key2: document.getElementById('newApiKey2')?.value || '',
+    dailyLimit: parseInt(document.getElementById('newApiLimit').value) || 500,
+    enabled: true, usedToday: 0, usedTotal: 0, lastReset: new Date().toDateString()
+  };
+  if (!newAPI.key) { alert('API key is required.'); return; }
+  config.providers.push(newAPI);
+  saveJobAPIs(config);
+  closeModal('addJobAPIModal');
+  renderJobAPIs();
+  loadDashboard();
+}
+
+function toggleJobAPI(i, enabled) {
+  const config = getJobAPIs();
+  config.providers[i].enabled = enabled;
+  saveJobAPIs(config);
+}
+
+function deleteJobAPI(i) {
+  if (!confirm('Remove this API?')) return;
+  const config = getJobAPIs();
+  config.providers.splice(i, 1);
+  saveJobAPIs(config);
+  renderJobAPIs();
+}
+
+function updateSwitchEvery(v) {
+  const config = getJobAPIs();
+  config.switchEvery = parseInt(v);
+  saveJobAPIs(config);
+}
+
+// ── EMAIL APIS ────────────────────────────────────────────────────────
+function getEmailAPIs() { return JSON.parse(localStorage.getItem('hm_email_apis') || '{"providers":[],"switchEvery":10}'); }
+function saveEmailAPIs(data) { localStorage.setItem('hm_email_apis', JSON.stringify(data)); }
+
+function prefillEmail(type, name, limit) {
+  document.getElementById('newEmailProvider').value = type;
+  document.getElementById('newEmailName').value = name + ' Account 1';
+  document.getElementById('newEmailLimit').value = limit;
+  document.getElementById('addEmailAPIModal').classList.add('open');
+}
+
+function renderEmailAPIs() {
+  const config = getEmailAPIs();
+  const today = new Date().toDateString();
+  const totalCap = config.providers.reduce((s,p) => s+(p.dailyLimit||0), 0);
+  const totalUsed = config.providers.reduce((s,p) => s+(p.lastReset===today?p.usedToday||0:0), 0);
+  const active = config.providers.filter(p=>p.enabled&&p.key).length;
+  document.getElementById('emailTotalCap').textContent = totalCap;
+  document.getElementById('emailTodayUsed').textContent = totalUsed;
+  document.getElementById('emailActiveCount').textContent = active;
+  const list = document.getElementById('emailApiList');
+  if (config.providers.length === 0) {
+    list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No email providers added. Click a provider above or "+ Add Provider" to get started.</p>';
+    return;
+  }
+  list.innerHTML = config.providers.map((p,i) => {
+    const used = p.lastReset===today ? p.usedToday||0 : 0;
+    const pct = p.dailyLimit ? Math.round(used/p.dailyLimit*100) : 0;
+    return `<div class="api-row">
+      <div class="api-icon">📧</div>
+      <div class="api-info">
+        <div class="api-name">${p.name} <span style="font-size:.78rem;color:var(--grey-md);">— ${p.providerType}</span></div>
+        <div class="api-detail">From: ${p.fromName} &lt;${p.fromEmail}&gt; · ${p.dailyLimit}/day</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <div class="usage-bar" style="width:120px;"><div class="usage-fill${pct>=60?' warn':''}" style="width:${pct}%;"></div></div>
+          <span style="font-size:.78rem;color:var(--grey-md);">${used}/${p.dailyLimit} today</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <label class="toggle"><input type="checkbox" ${p.enabled?'checked':''} onchange="toggleEmailAPI(${i},this.checked)"><div class="toggle-slider"></div></label>
+        <button class="btn btn-ghost-navy btn-sm" onclick="deleteEmailAPI(${i})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddEmailAPI() { document.getElementById('addEmailAPIModal').classList.add('open'); }
+
+function saveEmailAPI() {
+  const config = getEmailAPIs();
+  const p = {
+    id: Date.now(),
+    name: document.getElementById('newEmailName').value || 'Email Provider',
+    providerType: document.getElementById('newEmailProvider').value,
+    key: document.getElementById('newEmailKey').value,
+    dailyLimit: parseInt(document.getElementById('newEmailLimit').value) || 100,
+    fromName: document.getElementById('newEmailFromName').value || 'OptaJob',
+    fromEmail: document.getElementById('newEmailFromEmail').value || 'noreply@optajob.com',
+    enabled: true, usedToday: 0, usedTotal: 0, lastReset: new Date().toDateString()
+  };
+  if (!p.key) { alert('API key required.'); return; }
+  config.providers.push(p);
+  saveEmailAPIs(config);
+  closeModal('addEmailAPIModal');
+  renderEmailAPIs();
+}
+
+function toggleEmailAPI(i, v) { const c=getEmailAPIs(); c.providers[i].enabled=v; saveEmailAPIs(c); }
+function deleteEmailAPI(i) { if(!confirm('Remove?')) return; const c=getEmailAPIs(); c.providers.splice(i,1); saveEmailAPIs(c); renderEmailAPIs(); }
+
+// ── AD NETWORKS ───────────────────────────────────────────────────────
+const AD_NETWORKS = [
+  { id:'admob',     name:'Google AdMob',      icon:'📱', note:'Best revenue in India · Apply at admob.google.com · Takes 7-14 days', fields:['App ID','Banner Unit ID','Rewarded Unit ID','Interstitial Unit ID'] },
+  { id:'meta',      name:'Meta Audience',     icon:'👥', note:'Facebook/Instagram ads · High CPM', fields:['App ID','Banner Unit','Rewarded Unit'] },
+  { id:'unity',     name:'Unity Ads',          icon:'🎮', note:'Good fill rate · Strong rewarded video', fields:['Game ID','Rewarded Unit','Banner Unit'] },
+  { id:'applovin',  name:'AppLovin MAX',       icon:'⚡', note:'Mediation — uses multiple networks · Best for revenue', fields:['SDK Key','Rewarded Unit','Banner Unit','Interstitial Unit'] },
+  { id:'ironsource',name:'ironSource',         icon:'🔗', note:'Strong in India', fields:['App Key','Rewarded Unit','Banner Unit'] },
+  { id:'inmobi',    name:'InMobi',             icon:'🇮🇳', note:'Indian company · Great for Indian traffic', fields:['Account ID','Placement ID','Rewarded ID'] },
+];
+
+function renderAdNetworks() {
+  const saved = JSON.parse(localStorage.getItem('hm_ad_networks') || '{}');
+  const list = document.getElementById('adNetworkList');
+  if (!list) return;
+  list.innerHTML = AD_NETWORKS.map(n => {
+    const data = saved[n.id] || {};
+    const configured = n.fields.some(f => data[f]);
+    return `<div style="border:1px solid ${configured?'rgba(61,191,160,.3)':'rgba(0,0,0,.08)'};border-radius:14px;padding:18px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${data.open?'16px':'0'};">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:1.4rem;">${n.icon}</span>
+          <div>
+            <div style="font-weight:700;color:var(--navy);">${n.name}</div>
+            <div style="font-size:.78rem;color:var(--grey-md);">${n.note}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          ${configured ? '<span style="font-size:.75rem;background:rgba(61,191,160,.12);color:#16a34a;padding:3px 10px;border-radius:10px;font-weight:700;">✓ Configured</span>' : ''}
+          <button class="btn btn-ghost-navy btn-sm" onclick="toggleAdNetwork('${n.id}',this)">${data.open ? 'Collapse ▲' : 'Configure ▼'}</button>
+        </div>
+      </div>
+      <div id="adnet-${n.id}" style="display:${data.open?'block':'none'}">
+        <div style="padding:8px;background:rgba(245,158,11,.06);border-radius:8px;font-size:.8rem;color:#92400e;margin-bottom:14px;">
+          🔧 Test mode: Use Google test IDs during development. Replace with real IDs before Play Store submission.
+        </div>
+        ${n.fields.map(f => `<div class="form-group"><label class="form-label">${f}</label><input type="text" class="form-input" placeholder="Enter ${f}" value="${data[f]||''}" onchange="saveAdNetwork('${n.id}','${f}',this.value)"></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAdNetwork(id, btn) {
+  const el = document.getElementById('adnet-'+id);
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? 'Configure ▼' : 'Collapse ▲';
+  const saved = JSON.parse(localStorage.getItem('hm_ad_networks') || '{}');
+  if (!saved[id]) saved[id] = {};
+  saved[id].open = !isOpen;
+  localStorage.setItem('hm_ad_networks', JSON.stringify(saved));
+}
+
+function saveAdNetwork(id, field, value) {
+  const saved = JSON.parse(localStorage.getItem('hm_ad_networks') || '{}');
+  if (!saved[id]) saved[id] = {};
+  saved[id][field] = value;
+  localStorage.setItem('hm_ad_networks', JSON.stringify(saved));
+}
+
+// ── USERS & CREDIT DAYS ───────────────────────────────────────────────
+function getUsers() { return Object.entries(JSON.parse(localStorage.getItem('hm_udb') || '{}')).map(([,v]) => v); }
+
+function renderUsersList() {
+  const users = getUsers().filter(u => !u.isAdmin && u.status === 'active');
+  const list = document.getElementById('usersList');
+  if (users.length === 0) { list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No active users yet.</p>'; return; }
+  list.innerHTML = users.map(u => {
+    const fl = u.firstLoginAt || u.registeredAt || Date.now();
+    const cd = u.creditDays ?? 14;
+    const daysLeft = cd === 9999 ? '∞' : Math.max(0, cd - Math.floor((Date.now()-fl)/86400000));
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:var(--off-white);margin-bottom:8px;cursor:pointer;border:2px solid transparent;" onclick="toggleUserSelect(this,'${u.email}')">
+      <input type="checkbox" style="width:16px;height:16px;accent-color:var(--teal);" class="user-checkbox" data-email="${u.email}">
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:.9rem;color:var(--navy);">${u.name}</div>
+        <div style="font-size:.78rem;color:var(--grey-md);">${u.email}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:700;font-size:.9rem;color:${typeof daysLeft==='number'&&daysLeft===0?'var(--grey-md)':'var(--teal)'};">${daysLeft}${typeof daysLeft==='number'?' days left':''}</div>
+        <div style="font-size:.75rem;color:var(--grey-md);">of ${cd===9999?'∞':cd} days</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleUserSelect(el, email) {
+  const cb = el.querySelector('.user-checkbox');
+  cb.checked = !cb.checked;
+  el.style.borderColor = cb.checked ? 'var(--teal)' : 'transparent';
+  el.style.background = cb.checked ? 'rgba(61,191,160,.06)' : 'var(--off-white)';
+}
+
+function selectAllUsers() {
+  document.querySelectorAll('.user-checkbox').forEach(cb => {
+    cb.checked = true;
+    cb.closest('div').style.borderColor = 'var(--teal)';
+    cb.closest('div').style.background = 'rgba(61,191,160,.06)';
+  });
+}
+
+function applyCreditDays() {
+  const selected = [...document.querySelectorAll('.user-checkbox:checked')].map(cb => cb.dataset.email);
+  if (!selected.length) { alert('Select at least one user.'); return; }
+  const days = parseInt(document.getElementById('newCreditDays').value);
+  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  selected.forEach(email => {
+    if (udb[email]) {
+      const old = udb[email].creditDays ?? 14;
+      udb[email].creditDays = days;
+      // Add notification for this user
+      const notifs = JSON.parse(localStorage.getItem(`hm_un_${email}`) || '[]');
+      const msg = days > old
+        ? `🎉 Your free daily credits have been extended to ${days===9999?'unlimited':days+' days'} by the admin!`
+        : `ℹ Your free credit period has been updated to ${days} days by the admin.`;
+      notifs.unshift({ id: Date.now(), msg, type: 'credit', read: false, at: Date.now() });
+      localStorage.setItem(`hm_un_${email}`, JSON.stringify(notifs));
+    }
+  });
+  localStorage.setItem('hm_udb', JSON.stringify(udb));
+  alert(`✅ Applied ${days===9999?'unlimited':days+' days'} to ${selected.length} user(s). Notifications sent.`);
+  renderUsersList();
+}
+
+function renderFullUsers() {
+  const users = getUsers();
+  const list = document.getElementById('fullUsersList');
+  if (!users.length) { list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No users registered yet.</p>'; return; }
+  list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+    <thead><tr style="background:var(--off-white);">
+      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Name</th>
+      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Email</th>
+      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Status</th>
+      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Plan</th>
+      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Joined</th>
+    </tr></thead>
+    <tbody>${users.map(u => `
+      <tr style="border-bottom:1px solid rgba(0,0,0,.04);">
+        <td style="padding:12px;font-weight:600;color:var(--navy);">${u.name||'—'}</td>
+        <td style="padding:12px;color:var(--grey-dk);">${u.email}</td>
+        <td style="padding:12px;"><span style="padding:3px 8px;border-radius:8px;font-size:.75rem;font-weight:700;background:${u.status==='active'?'rgba(34,197,94,.12)':'rgba(239,68,68,.1)'};color:${u.status==='active'?'#16a34a':'#dc2626'};">${u.status||'unknown'}</span></td>
+        <td style="padding:12px;color:var(--grey-dk);text-transform:capitalize;">${u.plan||'free'}</td>
+        <td style="padding:12px;color:var(--grey-md);">${u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-IN') : '—'}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ── ADMINS ────────────────────────────────────────────────────────────
+function addAdmin() {
+  const email = document.getElementById('newAdminEmail').value.trim();
+  if (!email || !/\S+@\S+\.\S+/.test(email)) { alert('Enter a valid email.'); return; }
+  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  if (udb[email]) { udb[email].isAdmin = true; udb[email].plan = 'elite'; }
+  else { udb[email] = { name:'Admin', email, isAdmin:true, plan:'elite', status:'pending_admin', registeredAt:Date.now() }; }
+  localStorage.setItem('hm_udb', JSON.stringify(udb));
+  document.getElementById('newAdminEmail').value = '';
+  alert(`✅ ${email} now has admin access.`);
+  renderAdmins();
+}
+
+function renderAdmins() {
+  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  const admins = Object.values(udb).filter(u => u.isAdmin && u.email !== ADMIN_EMAIL);
+  const list = document.getElementById('adminsList');
+  if (!list) return;
+  list.innerHTML = admins.length === 0 ? '<p style="color:var(--grey-md);font-size:.88rem;">No additional admins added yet.</p>' :
+    admins.map(a => `<div class="api-row">
+      <div class="api-icon" style="background:rgba(27,63,125,.1);">👤</div>
+      <div class="api-info"><div class="api-name">${a.name||'Admin'}</div><div class="api-detail">${a.email}</div></div>
+      <button class="btn btn-danger btn-sm" onclick="removeAdmin('${a.email}')">Remove</button>
+    </div>`).join('');
+}
+
+function removeAdmin(email) {
+  if (!confirm('Remove admin access from ' + email + '?')) return;
+  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  if (udb[email]) { udb[email].isAdmin = false; localStorage.setItem('hm_udb', JSON.stringify(udb)); }
+  renderAdmins();
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────
+function renderAllNotifs() {
+  const notifs = JSON.parse(localStorage.getItem('hm_notifs') || '[]');
+  const list = document.getElementById('allNotifsList');
+  if (!notifs.length) { list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No notifications yet.</p>'; return; }
+  list.innerHTML = notifs.map(n => `
+    <div class="notif-item${n.read?'':' unread'}">
+      <div class="notif-dot" style="background:${n.type==='job_api'?'#ef4444':n.type==='email_api'?'#f59e0b':'#3dbfa0'};"></div>
+      <div>
+        <div style="font-size:.9rem;color:var(--grey-dk);">${n.msg}</div>
+        <div style="font-size:.75rem;color:var(--grey-md);margin-top:3px;">${new Date(n.at).toLocaleString('en-IN')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function markAllNotifsRead() {
+  const n = JSON.parse(localStorage.getItem('hm_notifs') || '[]').map(x=>({...x,read:true}));
+  localStorage.setItem('hm_notifs', JSON.stringify(n));
+  renderAllNotifs();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+</script>
+</body>
+</html>

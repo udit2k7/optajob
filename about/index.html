@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Us — OptaJob | AI Job Search Made in India</title>
+<meta name="description" content="Learn about OptaJob — India's AI-powered job search app. Built by Udit Tandon to help every Indian job seeker find their dream job faster.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230e2550' rx='20'/><line x1='20' y1='80' x2='70' y2='24' stroke='%231b3f7d' stroke-width='14' stroke-linecap='round'/><circle cx='44' cy='26' r='12' fill='%235dd4b8'/></svg>">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.story-section { padding: 96px 0; }
+.story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.story-label { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--teal); margin-bottom: 14px; }
+.story-title { font-size: clamp(1.8rem, 3vw, 2.6rem); color: var(--navy-dk); margin-bottom: 20px; }
+.story-text  { color: var(--grey-dk); line-height: 1.85; font-size: 1.05rem; margin-bottom: 16px; }
+.quote-card { background: var(--navy-dk); border-radius: 24px; padding: 36px; position: relative; overflow: hidden; }
+.quote-card::before { content: '"'; position: absolute; top: -20px; left: 20px; font-size: 120px; font-family: Georgia, serif; color: rgba(61,191,160,.1); line-height: 1; pointer-events: none; }
+.quote-text { font-size: 1.15rem; color: rgba(255,255,255,.9); line-height: 1.8; font-style: italic; position: relative; z-index: 1; margin-bottom: 20px; }
+.quote-author { display: flex; align-items: center; gap: 14px; }
+.quote-avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3dbfa0, #5dd4b8); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.3rem; color: white; flex-shrink: 0; font-family: 'Syne', sans-serif; }
+.quote-name  { font-weight: 700; color: white; font-size: 1rem; }
+.quote-role  { color: rgba(255,255,255,.5); font-size: .85rem; margin-top: 2px; }
+.value-card  { background: var(--white); border: 1px solid rgba(0,0,0,.06); border-radius: 20px; padding: 28px; transition: var(--trans); }
+.value-card:hover { transform: translateY(-4px); border-color: rgba(61,191,160,.2); box-shadow: var(--shadow-md); }
+.value-icon  { font-size: 2rem; margin-bottom: 14px; }
+.value-title { font-weight: 700; color: var(--navy); font-size: 1.05rem; margin-bottom: 8px; }
+.value-desc  { font-size: .9rem; color: var(--grey-dk); line-height: 1.7; }
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(180deg, var(--teal), var(--navy)); }
+.timeline-item { position: relative; padding-bottom: 32px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot { position: absolute; left: -29px; top: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--teal); border: 3px solid white; box-shadow: 0 0 0 2px var(--teal); }
+.timeline-year { font-size: .78rem; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.timeline-title { font-weight: 700; color: var(--navy); font-size: .98rem; margin-bottom: 4px; }
+.timeline-desc { font-size: .88rem; color: var(--grey-md); line-height: 1.65; }
+.team-card { background: var(--white); border-radius: 24px; padding: 32px; text-align: center; border: 1px solid rgba(0,0,0,.06); transition: var(--trans); }
+.team-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.team-avatar { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, var(--navy), var(--teal)); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 2.4rem; font-weight: 800; color: white; margin: 0 auto 20px; box-shadow: 0 8px 32px rgba(27,63,125,.25); }
+.team-name { font-weight: 800; color: var(--navy); font-size: 1.15rem; margin-bottom: 4px; }
+.team-role { font-size: .88rem; color: var(--teal); font-weight: 600; margin-bottom: 12px; }
+.team-bio  { font-size: .88rem; color: var(--grey-dk); line-height: 1.7; }
+.mission-strip { background: linear-gradient(135deg, var(--navy-dk), var(--navy)); border-radius: 28px; padding: 56px 48px; text-align: center; position: relative; overflow: hidden; }
+.mission-strip::before { content: ''; position: absolute; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(61,191,160,.15) 0%, transparent 70%); top: -100px; right: -100px; }
+.mission-strip h2 { color: white; margin-bottom: 16px; }
+.mission-strip p  { color: rgba(255,255,255,.7); max-width: 600px; margin: 0 auto 32px; font-size: 1.1rem; }
+.stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+.stat-box  { text-align: center; }
+.stat-big  { font-family: 'Syne', sans-serif; font-size: 2.6rem; font-weight: 800; color: var(--teal); line-height: 1; }
+.stat-lbl  { font-size: .85rem; color: rgba(255,255,255,.55); margin-top: 4px; }
+@media (max-width: 768px) { .story-grid { grid-template-columns: 1fr; gap: 40px; } .stat-row { grid-template-columns: 1fr; gap: 16px; } .mission-strip { padding: 36px 24px; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav scrolled" id="nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" rx="16" fill="#0e2550"/>
+          <line x1="20" y1="80" x2="70" y2="24" stroke="#1b3f7d" stroke-width="13" stroke-linecap="round"/>
+          <polygon points="70,24 56,32 64,44" fill="#1b3f7d"/>
+          <circle cx="44" cy="26" r="12" fill="#5dd4b8"/>
+          <path d="M44 38 C28 48 30 68 46 74" stroke="#3dbfa0" stroke-width="10" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-logo-text">opta<span>job</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/#features">Features</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/about" class="active">About</a>
+      </div>
+      <a href="/#download" class="btn btn-primary btn-sm">Download App</a>
+      <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu">
+  <button class="mobile-menu-close">✕</button>
+  <div class="mobile-menu-links">
+    <a href="/">Home</a><a href="/#features">Features</a>
+    <a href="/#pricing">Pricing</a><a href="/about">About</a>
+  </div>
+  <a href="/#download" class="btn btn-primary" style="margin-top:32px;">Download Free</a>
+</div>
+
+<!-- HERO -->
+<div class="inner-hero">
+  <div class="container" style="position:relative;z-index:1;">
+    <span class="badge badge-white" style="margin-bottom:16px;">🇮🇳 Made in India</span>
+    <h1>We Built the Job Search Tool<br>We Wished We Had</h1>
+    <p>OptaJob started with a simple frustration — job searching in India was broken. We fixed it.</p>
+  </div>
+  <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(61,191,160,.12) 0%,transparent 70%);top:-100px;right:-100px;pointer-events:none;"></div>
+</div>
+
+<!-- OUR STORY -->
+<section class="story-section">
+  <div class="container">
+    <div class="story-grid">
+      <div>
+        <div class="story-label">Our Story</div>
+        <h2 class="story-title">Born from the frustration of the Indian job hunt</h2>
+        <p class="story-text">Every Indian job seeker knows the grind. You apply to hundreds of listings, send generic resumes, never hear back, and have no idea if anyone even saw your application. You waste hours tailoring each resume manually — or you don't, and the ATS filters you out instantly.</p>
+        <p class="story-text">After watching friends and family go through this repeatedly, OptaJob was built with one mission: make the entire job search process — finding jobs, tailoring your application, reaching the actual decision-maker — as fast and intelligent as possible.</p>
+        <p class="story-text">What started as a personal project became an app designed for every job seeker in India — freshers, experienced professionals, and everyone in between.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px;">
+          <a href="/#download" class="btn btn-primary">Download Free</a>
+          <a href="/#features" class="btn btn-ghost-navy">See Features</a>
+        </div>
+      </div>
+      <div>
+        <div class="quote-card">
+          <p class="quote-text">"The average Indian job seeker applies to 40-60 companies before getting one offer. We wanted to cut that number in half — by making every single application smarter, more targeted, and more likely to get a response."</p>
+          <div class="quote-author">
+            <div class="quote-avatar">U</div>
+            <div>
+              <div class="quote-name">Udit Tandon</div>
+              <div class="quote-role">Founder & Developer, OptaJob</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline" style="margin-top:36px;">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-year">2024 · Q4</div>
+            <div class="timeline-title">The idea is born</div>
+            <div class="timeline-desc">Frustration with generic job search apps leads to the first prototype concept.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-year">2025 · Q1</div>
+            <div class="timeline-title">Development begins</div>
+            <div class="timeline-desc">Core features built: job search, AI resume tailoring, credit system, contact finder.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-year">2025 · Q2</div>
+            <div class="timeline-title">Beta testing</div>
+            <div class="timeline-desc">Closed beta with 50 users across Bangalore, Delhi, Mumbai, Pune.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:var(--navy);box-shadow:0 0 0 2px var(--navy);"></div>
+            <div class="timeline-year">2025 · Q3 — Coming</div>
+            <div class="timeline-title">Play Store launch</div>
+            <div class="timeline-desc">Public launch on Google Play Store. Free for every Indian job seeker.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MISSION STRIP -->
+<div style="padding: 0 24px; max-width: 1200px; margin: 0 auto;">
+  <div class="mission-strip">
+    <div style="position:relative;z-index:1;">
+      <span class="badge badge-white" style="margin-bottom:16px;">Our Mission</span>
+      <h2>Every Indian deserves a fair shot at their dream job</h2>
+      <p>Job searching shouldn't require connections, expensive resume services, or luck. OptaJob levels the playing field with AI tools that were previously only available to candidates with premium career coaches.</p>
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-big">3x</div><div class="stat-lbl">Faster job search</div></div>
+        <div class="stat-box"><div class="stat-big">9</div><div class="stat-lbl">Contact finder vendors</div></div>
+        <div class="stat-box"><div class="stat-big">₹0</div><div class="stat-lbl">To get started</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM -->
+<section class="section">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="badge badge-teal">✦ The Team</span>
+      <h2 style="margin-top:12px;">The people behind OptaJob</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:900px;margin:0 auto;">
+      <div class="team-card fade-up" style="grid-column:1/4;max-width:360px;margin:0 auto;width:100%;">
+        <div class="team-avatar">U</div>
+        <div class="team-name">Udit Tandon</div>
+        <div class="team-role">Founder · Developer · Designer</div>
+        <p class="team-bio">Built OptaJob end-to-end — from the AI job matching algorithm to the credit system to this website. Based in India, obsessed with solving real problems for Indian job seekers.</p>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:16px;">
+          <a href="mailto:support@optajob.com" class="btn btn-ghost-navy btn-sm">✉ Email</a>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--grey-md);font-size:.95rem;margin-top:32px;">OptaJob is built solo — every line of code, every design decision, every support reply is from Udit. That means you're always talking to the person who built it.</p>
+  </div>
+</section>
+
+<!-- VALUES -->
+<section class="section" style="background:var(--off-white);">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="badge badge-teal">✦ Our Values</span>
+      <h2 style="margin-top:12px;">What we believe in</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+      <div class="value-card fade-up">
+        <div class="value-icon">🎯</div>
+        <div class="value-title">Results over hype</div>
+        <p class="value-desc">We don't promise you'll get a job. We promise every application you send through OptaJob will be smarter, more targeted, and more likely to succeed than one sent without it.</p>
+      </div>
+      <div class="value-card fade-up">
+        <div class="value-icon">🔍</div>
+        <div class="value-title">Transparency</div>
+        <p class="value-desc">We show you exactly what confidence level a contact email has (HIGH/MEDIUM/LOW). We show you exactly why a job was matched to your resume. No black boxes.</p>
+      </div>
+      <div class="value-card fade-up">
+        <div class="value-icon">🇮🇳</div>
+        <div class="value-title">Built for India</div>
+        <p class="value-desc">₹ salary filters. Indian city-first search. Data stored in compliance with Indian IT Act. Made by an Indian developer who understands the Indian job market.</p>
+      </div>
+      <div class="value-card fade-up">
+        <div class="value-icon">🔐</div>
+        <div class="value-title">Privacy first</div>
+        <p class="value-desc">Your resume stays on your device. We don't sell your data. We don't share your profile with employers without your action. See our full <a href="/privacy" style="color:var(--teal-dk);">Privacy Policy</a>.</p>
+      </div>
+      <div class="value-card fade-up">
+        <div class="value-icon">💳</div>
+        <div class="value-title">Fair pricing</div>
+        <p class="value-desc">Free for 14 days, earn more with ads, upgrade only when you see value. No dark patterns, no forced upgrades, no subscription traps. Cancel anytime.</p>
+      </div>
+      <div class="value-card fade-up">
+        <div class="value-icon">🛠</div>
+        <div class="value-title">Constantly improving</div>
+        <p class="value-desc">Interview Prep, push notifications, Razorpay payments, and more are coming. We ship fast and listen to real user feedback to decide what to build next.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section">
+  <div class="container">
+    <div style="max-width:640px;margin:0 auto;text-align:center;">
+      <span class="badge badge-teal" style="margin-bottom:16px;">✦ Get in Touch</span>
+      <h2 style="color:var(--navy-dk);margin-bottom:16px;">We'd love to hear from you</h2>
+      <p style="margin-bottom:36px;">Feedback, bug reports, partnership enquiries, or just to say hi — we read every message personally.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;">
+        <div style="background:var(--off-white);border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:24px;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:10px;">✉️</div>
+          <div style="font-weight:700;color:var(--navy);margin-bottom:4px;">Email Support</div>
+          <a href="mailto:support@optajob.com" style="color:var(--teal-dk);font-size:.92rem;">support@optajob.com</a>
+          <div style="font-size:.78rem;color:var(--grey-md);margin-top:4px;">Reply within 24-48 hours</div>
+        </div>
+        <div style="background:var(--off-white);border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:24px;text-align:center;">
+          <div style="font-size:1.8rem;margin-bottom:10px;">🌐</div>
+          <div style="font-weight:700;color:var(--navy);margin-bottom:4px;">Website</div>
+          <a href="https://optajob.com" style="color:var(--teal-dk);font-size:.92rem;">optajob.com</a>
+          <div style="font-size:.78rem;color:var(--grey-md);margin-top:4px;">Privacy Policy · Terms · FAQ</div>
+        </div>
+      </div>
+      <a href="mailto:support@optajob.com" class="btn btn-primary btn-lg">Send us a Message</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="nav-logo">
+          <svg width="32" height="32" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="16" fill="#0e2550"/><line x1="20" y1="80" x2="70" y2="24" stroke="#1b3f7d" stroke-width="13" stroke-linecap="round"/><circle cx="44" cy="26" r="12" fill="#5dd4b8"/></svg>
+          <span style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:white;">opta<span style="color:#3dbfa0">job</span></span>
+        </div>
+        <p>India's AI-powered job search platform. Made with ❤️ by Udit Tandon.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="/#features">Features</a><a href="/#how-it-works">How it Works</a>
+        <a href="/#pricing">Pricing</a><a href="/#download">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="/about">About Us</a><a href="/#faq">FAQ</a>
+        <a href="mailto:support@optajob.com">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 OptaJob · Made by Udit Tandon · All rights reserved</p>
+      <div class="footer-bottom-links">
+        <a href="/privacy">Privacy</a><a href="/terms">Terms</a>
+        <a href="mailto:support@optajob.com">support@optajob.com</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/js/main.js"></script>
+</body>
+</html>
