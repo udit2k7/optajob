@@ -485,119 +485,111 @@ body{background:#f1f5f9;}
 </div>
 
 <!-- CLOUD SYNC PAGE -->
-<div id="page-cloud" class="page" style="display:none;">
-  <div class="page-header">
-    <h1 class="page-title">☁️ Cloud Sync — Supabase</h1>
-    <p class="page-subtitle">Sync all admin data to Supabase so it works on any device</p>
-  </div>
+<div id="page-cloud" class="page" style="display:none;padding:24px;max-width:720px;">
 
-  <!-- Status Bar -->
-  <div style="background:#0a1628;border:1px solid rgba(61,191,160,.2);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
-    <span style="font-size:20px;">🔌</span>
-    <div style="flex:1;">
-      <div style="font-size:12px;color:#7ea8cc;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">Status</div>
-      <div id="cloud-status" style="font-size:13px;color:#9ca3af;">Not connected — enter credentials below</div>
+  <!-- Status bar -->
+  <div style="background:#e8f4fd;border:1px solid #bee3f8;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:22px;">☁️</span>
+    <div>
+      <div style="font-weight:700;color:#1b3f7d;font-size:13px;">Cloud Sync Status</div>
+      <div id="cloud-status" style="font-size:13px;color:#4a5568;">Not connected — enter credentials below to sync across devices</div>
     </div>
   </div>
 
-  <!-- Credentials Form -->
+  <!-- Connect form -->
   <div class="card-section" style="margin-bottom:16px;">
-    <div class="card-section-header">
-      <h3 class="card-section-title">Supabase Connection</h3>
-    </div>
+    <div class="card-section-header"><h3 class="card-section-title">Connect Supabase</h3></div>
     <div class="card-section-body">
       <div class="form-group">
         <label class="form-label">Project URL</label>
-        <input type="text" id="sb-url" class="form-input" placeholder="https://xxxxxxxxxxxx.supabase.co"
-          value="" style="font-family:monospace;font-size:13px;">
-        <div class="form-hint">From Supabase Dashboard → Project Settings → API</div>
+        <input type="text" id="sb-url" class="form-input" placeholder="https://xxxxxxxxxxxx.supabase.co" style="font-family:monospace;font-size:13px;">
+        <div class="form-hint">From Supabase → Project Settings → API → Project URL</div>
       </div>
       <div class="form-group">
         <label class="form-label">Anon (Public) Key</label>
-        <input type="password" id="sb-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5..."
-          style="font-family:monospace;font-size:12px;">
-        <div class="form-hint">The anon/public key — safe to use in browser</div>
+        <input type="password" id="sb-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-family:monospace;font-size:12px;">
+        <div class="form-hint">From Supabase → Project Settings → API → anon public key</div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
+      <div style="display:flex;gap:8px;margin-top:4px;">
         <button class="btn btn-primary" style="flex:2;" onclick="cloudConnect()">🔌 Connect</button>
-        <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-ghost" style="flex:1;text-decoration:none;text-align:center;">Open Supabase ↗</a>
+        <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-ghost" style="flex:1;text-align:center;text-decoration:none;">Open Supabase ↗</a>
       </div>
     </div>
   </div>
 
-  <!-- Sync Actions -->
+  <!-- Sync actions -->
   <div class="card-section" style="margin-bottom:16px;">
-    <div class="card-section-header">
-      <h3 class="card-section-title">Sync Actions</h3>
-    </div>
+    <div class="card-section-header"><h3 class="card-section-title">Sync Data</h3></div>
     <div class="card-section-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div style="background:#0a1628;border:1px solid rgba(61,191,160,.15);border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:24px;margin-bottom:6px;">⬇️</div>
-          <div style="font-size:13px;font-weight:700;color:white;margin-bottom:4px;">Pull from Cloud</div>
-          <div style="font-size:11px;color:#7ea8cc;margin-bottom:10px;">Load cloud data → this device</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">⬇️</div>
+          <div style="font-weight:700;color:#1b3f7d;margin-bottom:4px;font-size:13px;">Pull from Cloud</div>
+          <div style="font-size:11px;color:#718096;margin-bottom:12px;">Load cloud data to this device</div>
           <button class="btn btn-primary btn-sm" style="width:100%;" onclick="cloudPull()">Pull Now</button>
         </div>
-        <div style="background:#0a1628;border:1px solid rgba(61,191,160,.15);border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:24px;margin-bottom:6px;">⬆️</div>
-          <div style="font-size:13px;font-weight:700;color:white;margin-bottom:4px;">Push to Cloud</div>
-          <div style="font-size:11px;color:#7ea8cc;margin-bottom:10px;">Save this device → cloud</div>
-          <button class="btn btn-primary btn-sm" style="width:100%;background:var(--navy);" onclick="cloudPush()">Push Now</button>
+        <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">⬆️</div>
+          <div style="font-weight:700;color:#1b3f7d;margin-bottom:4px;font-size:13px;">Push to Cloud</div>
+          <div style="font-size:11px;color:#718096;margin-bottom:12px;">Save this device to cloud</div>
+          <button class="btn btn-primary btn-sm" style="width:100%;background:#2d6a4f;" onclick="cloudPush()">Push Now</button>
         </div>
       </div>
-      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;font-size:12px;color:#fbbf24;line-height:1.6;">
-        ⚠️ <strong>Pull</strong> overwrites this device with cloud data. <strong>Push</strong> overwrites cloud with this device's data. When in doubt, pull first.
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e;">
+        ⚠️ <b>Pull</b> overwrites this device with cloud data. <b>Push</b> saves this device to cloud. When unsure, Pull first.
       </div>
     </div>
   </div>
 
-  <!-- What Gets Synced -->
+  <!-- What syncs -->
   <div class="card-section" style="margin-bottom:16px;">
-    <div class="card-section-header">
-      <h3 class="card-section-title">What Gets Synced</h3>
-    </div>
+    <div class="card-section-header"><h3 class="card-section-title">What Gets Synced</h3></div>
     <div class="card-section-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        ${['🔌 Job Search APIs','📧 Email APIs','📱 Ad Network Config','🎫 Access Codes','👤 User Database','🤖 AI Settings','💬 Support Queries','🔔 Notifications','🛡 Admin Users','📊 Stats & Counts'].map(item=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0a1628;border-radius:8px;font-size:12px;color:#d1d5db;">
-          ${item}
-        </div>`).join('')}
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🔌 Job Search APIs</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">📧 Email APIs</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">📱 Ad Network Config</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🎫 Access Codes</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">👤 User Database</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🤖 AI Settings</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">💬 Support Queries</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🔔 Notifications</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🛡️ Admin Users</div>
+        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">📊 Stats &amp; Counts</div>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:#7ea8cc;line-height:1.6;">
-        🔒 All data is stored securely in your own Supabase project. We have no access to it. Auto-sync happens every time you save a setting.
+      <div style="margin-top:10px;font-size:12px;color:#718096;line-height:1.6;">
+        🔒 Data is stored in your own Supabase project. Auto-sync activates after connecting — every setting change saves to cloud automatically.
       </div>
     </div>
   </div>
 
-  <!-- Setup Guide -->
+  <!-- SQL Setup -->
   <div class="card-section">
-    <div class="card-section-header">
-      <h3 class="card-section-title">How to Set Up Supabase (Free)</h3>
-    </div>
+    <div class="card-section-header"><h3 class="card-section-title">First Time Setup — Run this SQL in Supabase</h3></div>
     <div class="card-section-body">
-      <div style="counter-reset:step;">
-        ${[
-          ['Go to supabase.com → Sign up free (use your Google account)', 'supabase.com'],
-          ['Click New Project → give it a name → choose a region → set a database password → Create', ''],
-          ['Wait ~2 minutes for the project to be created', ''],
-          ['Go to Project Settings (gear icon) → API → copy the Project URL and anon/public key', ''],
-          ['Go to SQL Editor (left sidebar) → click New Query → paste the SQL below → click Run', ''],
-          ['Come back here → paste the URL and key above → click Connect → then Push Now', ''],
-        ].map((s,i)=>`
-        <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-          <div style="width:24px;height:24px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0e2550;flex-shrink:0;">${i+1}</div>
-          <div style="font-size:12.5px;color:#d1d5db;line-height:1.6;">${s[0]}${s[1]?`<a href="https://${s[1]}" target="_blank" style="color:#3dbfa0;margin-left:6px;">${s[1]} ↗</a>`:''}</div>
-        </div>`).join('')}
+      <div style="background:#1a202c;border-radius:8px;padding:14px;position:relative;">
+        <pre id="sql-code" style="color:#68d391;font-size:11.5px;line-height:1.8;white-space:pre-wrap;font-family:monospace;">CREATE TABLE IF NOT EXISTS admin_config (
+  key TEXT PRIMARY KEY,
+  value JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "optajob_admin"
+  ON admin_config FOR ALL USING (true) WITH CHECK (true);</pre>
+        <button id="copy-sql-btn" onclick="copySql()" style="position:absolute;top:8px;right:8px;background:rgba(104,211,145,.2);border:1px solid rgba(104,211,145,.3);border-radius:6px;padding:4px 10px;color:#68d391;font-size:11px;cursor:pointer;">Copy SQL</button>
       </div>
-      <div style="margin-top:12px;">
-        <div style="font-size:11px;font-weight:600;color:#7ea8cc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">SQL to Run in Supabase</div>
-        <div style="background:#0a0f1a;border-radius:8px;padding:12px;font-family:monospace;font-size:11.5px;color:#5dd4b8;line-height:1.8;position:relative;">
-          <div id="sql-code">CREATE TABLE IF NOT EXISTS admin_config (<br>&nbsp;&nbsp;key TEXT PRIMARY KEY,<br>&nbsp;&nbsp;value JSONB,<br>&nbsp;&nbsp;updated_at TIMESTAMPTZ DEFAULT NOW()<br>);<br><br>ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;<br><br>CREATE POLICY "optajob_admin"<br>&nbsp;&nbsp;ON admin_config FOR ALL USING (true) WITH CHECK (true);</div>
-          <button onclick="copySql()" style="position:absolute;top:8px;right:8px;background:rgba(61,191,160,.2);border:1px solid rgba(61,191,160,.3);border-radius:6px;padding:4px 10px;color:#3dbfa0;font-size:11px;cursor:pointer;" id="copy-sql-btn">Copy SQL</button>
-        </div>
+      <div style="margin-top:10px;font-size:12px;color:#718096;line-height:1.7;">
+        <b>Steps:</b> 1. Go to supabase.com → your Optajob project &nbsp;
+        2. Left sidebar → SQL Editor → New Query &nbsp;
+        3. Paste SQL above → click Run &nbsp;
+        4. Should say "Success. No rows returned" &nbsp;
+        5. Come back here → enter URL and key → Connect → Push Now
       </div>
     </div>
   </div>
+
 </div>
 
 <script src="/assets/js/main.js"></script>
