@@ -141,6 +141,7 @@ body{background:#f1f5f9;}
       <div class="sidebar-section">Settings</div>
       <button class="nav-item" onclick="showPage('credits',this)"><span class="nav-item-icon">💳</span>Credit Days</button>
       <button class="nav-item" onclick="showPage('admins',this)"><span class="nav-item-icon">🛡</span>Admin Users</button>
+      <button class="nav-item" onclick="showPage('cloud',this)"><span class="nav-item-icon">☁️</span>Cloud Sync</button>
       <div style="margin-top:auto;padding:16px;">
         <button class="btn btn-danger btn-sm" style="width:100%;" onclick="doLogout()">Sign Out</button>
         <div style="font-size:.75rem;color:rgba(255,255,255,.25);text-align:center;margin-top:10px;">OptaJob Admin</div>
@@ -601,6 +602,121 @@ body{background:#f1f5f9;}
 
 <script src="/assets/js/main.js"></script>
 <script>
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLOUD SYNC — Supabase integration (syncs admin data across devices)
+// ═══════════════════════════════════════════════════════════════════════
+const SYNC_KEYS_LIST = [
+  'hm_job_apis','hm_email_apis','hm_ad_config','hm_admin_codes',
+  'hm_udb','hm_plans_config','hm_ai_global','hm_ai_users',
+  'hm_queries','hm_notifs','hm_blocked','hm_pending','hm_outcome_counts'
+];
+
+const CloudSync = {
+  client: null,
+  connected: false,
+
+  getCreds() {
+    return {
+      url: localStorage.getItem('oj_sb_url') || '',
+      key: localStorage.getItem('oj_sb_key') || ''
+    };
+  },
+
+  setStatus(msg, type) {
+    const el = document.getElementById('cloud-status');
+    if (!el) return;
+    const colors = { ok:'#3dbfa0', err:'#ef4444', loading:'#f59e0b' };
+    el.textContent = msg;
+    el.style.color = colors[type] || '#9ca3af';
+  },
+
+  async connect(url, anonKey) {
+    if (!url || !anonKey) return { ok: false, msg: 'Enter URL and key' };
+    if (typeof supabase === 'undefined') {
+      this.setStatus('❌ Supabase library not loaded', 'err');
+      return { ok: false, msg: 'Supabase not loaded' };
+    }
+    try {
+      this.client = supabase.createClient(url.trim(), anonKey.trim());
+      const { error } = await this.client.from('admin_config').select('key').limit(1);
+      if (error) throw error;
+      this.connected = true;
+      localStorage.setItem('oj_sb_url', url.trim());
+      localStorage.setItem('oj_sb_key', anonKey.trim());
+      this.setStatus('✅ Connected to Supabase — auto-sync active', 'ok');
+      return { ok: true };
+    } catch (e) {
+      this.connected = false;
+      this.client = null;
+      this.setStatus('❌ ' + (e.message || 'Connection failed'), 'err');
+      return { ok: false, msg: e.message };
+    }
+  },
+
+  async autoConnect() {
+    const { url, key } = this.getCreds();
+    if (!url || !key || typeof supabase === 'undefined') return false;
+    try {
+      this.client = supabase.createClient(url, key);
+      this.connected = true;
+      return true;
+    } catch(e) { return false; }
+  },
+
+  async pull() {
+    if (!this.client) return { ok: false };
+    this.setStatus('⏳ Loading from cloud...', 'loading');
+    try {
+      const { data, error } = await this.client.from('admin_config').select('*');
+      if (error) throw error;
+      let n = 0;
+      (data || []).forEach(row => {
+        if (row.value !== null) {
+          localStorage.setItem(row.key, JSON.stringify(row.value));
+          n++;
+        }
+      });
+      this.setStatus('✅ Loaded ' + n + ' items — refresh to see changes', 'ok');
+      return { ok: true, count: n };
+    } catch (e) {
+      this.setStatus('❌ Pull failed: ' + e.message, 'err');
+      return { ok: false };
+    }
+  },
+
+  async push() {
+    if (!this.client) return { ok: false };
+    this.setStatus('⏳ Saving to cloud...', 'loading');
+    try {
+      const rows = SYNC_KEYS_LIST.map(key => {
+        const raw = localStorage.getItem(key);
+        let value = null;
+        try { value = raw ? JSON.parse(raw) : null; } catch(e) { value = raw; }
+        return { key, value, updated_at: new Date().toISOString() };
+      }).filter(r => r.value !== null);
+      const { error } = await this.client
+        .from('admin_config')
+        .upsert(rows, { onConflict: 'key' });
+      if (error) throw error;
+      this.setStatus('✅ Saved ' + rows.length + ' items to cloud', 'ok');
+      return { ok: true };
+    } catch (e) {
+      this.setStatus('❌ Push failed: ' + e.message, 'err');
+      return { ok: false };
+    }
+  },
+
+  saveOne(key, value) {
+    if (!this.client || !this.connected) return;
+    try {
+      this.client.from('admin_config')
+        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+        .then(() => {});
+    } catch(e) {}
+  }
+};
+
 // ── CREDENTIALS ───────────────────────────────────────────────────────
 // ── ADMIN CREDENTIALS ────────────────────────────────────────────────
 const ADMIN_EMAIL = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
@@ -1098,16 +1214,14 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 (function() {
   const _orig = localStorage.setItem.bind(localStorage);
   localStorage.setItem = function(key, value) {
-    _orig(key, value);
-    const SYNC_KEYS = ['hm_job_apis','hm_email_apis','hm_ad_config','hm_admin_codes',
-      'hm_udb','hm_plans_config','hm_ai_global','hm_ai_users','hm_queries','hm_notifs',
-      'hm_blocked','hm_pending','hm_outcome_counts'];
-    if (CloudSync.connected && SYNC_KEYS.includes(key)) {
-      try {
+    _orig(key, value); // Always save locally first
+    // Safe cloud sync — only if CloudSync is defined and connected
+    try {
+      if (typeof CloudSync !== 'undefined' && CloudSync.connected && SYNC_KEYS_LIST.includes(key)) {
         const parsed = JSON.parse(value);
         CloudSync.saveOne(key, parsed);
-      } catch(e) { CloudSync.saveOne(key, value); }
-    }
+      }
+    } catch(e) {} // Never let cloud sync crash local operations
   };
 })();
 
