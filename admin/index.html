@@ -646,12 +646,11 @@ CREATE POLICY "optajob_admin"
 
 </div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="/assets/js/main.js"></script>
 <script>
 
 // ═══════════════════════════════════════════════════════════════════════
-// CLOUD SYNC — Supabase integration (syncs admin data across devices)
+// CLOUD SYNC — Direct Supabase REST API (no library needed)
 // ═══════════════════════════════════════════════════════════════════════
 const SYNC_KEYS_LIST = [
   'hm_job_apis','hm_email_apis','hm_ad_config','hm_admin_codes',
@@ -660,7 +659,8 @@ const SYNC_KEYS_LIST = [
 ];
 
 const CloudSync = {
-  client: null,
+  url: '',
+  key: '',
   connected: false,
 
   getCreds() {
@@ -673,30 +673,40 @@ const CloudSync = {
   setStatus(msg, type) {
     const el = document.getElementById('cloud-status');
     if (!el) return;
-    const colors = { ok:'#3dbfa0', err:'#ef4444', loading:'#f59e0b' };
+    const colors = { ok:'#5dd4b8', err:'#f87171', loading:'#fbbf24' };
     el.textContent = msg;
-    el.style.color = colors[type] || '#9ca3af';
+    el.style.color = colors[type] || 'rgba(255,255,255,.6)';
   },
 
-  async connect(url, anonKey) {
-    if (!url || !anonKey) return { ok: false, msg: 'Enter URL and key' };
-    const _sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-    if (!_sb || !_sb.createClient) {
-      this.setStatus('❌ Supabase library not loaded — check internet connection', 'err');
-      return { ok: false, msg: 'Supabase not loaded' };
-    }
+  _headers() {
+    return {
+      'apikey': this.key,
+      'Authorization': 'Bearer ' + this.key,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    };
+  },
+
+  async connect(url, key) {
+    if (!url || !key) return { ok: false, msg: 'Enter URL and key' };
+    this.url = url.trim().replace(/\/$/, '');
+    this.key = key.trim();
     try {
-      this.client = _sb.createClient(url.trim(), anonKey.trim());
-      const { error } = await this.client.from('admin_config').select('key').limit(1);
-      if (error) throw error;
+      // Test connection with a simple GET
+      const r = await fetch(this.url + '/rest/v1/admin_config?select=key&limit=1', {
+        headers: this._headers()
+      });
+      if (!r.ok) {
+        const err = await r.text();
+        throw new Error('HTTP ' + r.status + ': ' + err.slice(0,100));
+      }
       this.connected = true;
-      localStorage.setItem('oj_sb_url', url.trim());
-      localStorage.setItem('oj_sb_key', anonKey.trim());
-      this.setStatus('✅ Connected to Supabase — auto-sync active', 'ok');
+      localStorage.setItem('oj_sb_url', this.url);
+      localStorage.setItem('oj_sb_key', this.key);
+      this.setStatus('✅ Connected · Auto-sync active', 'ok');
       return { ok: true };
-    } catch (e) {
+    } catch(e) {
       this.connected = false;
-      this.client = null;
       this.setStatus('❌ ' + (e.message || 'Connection failed'), 'err');
       return { ok: false, msg: e.message };
     }
@@ -704,39 +714,23 @@ const CloudSync = {
 
   async autoConnect() {
     const { url, key } = this.getCreds();
-    if (!url || !key || typeof supabase === 'undefined') return false;
+    if (!url || !key) return false;
+    this.url = url;
+    this.key = key;
     try {
-      const _sb2 = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-      if (!_sb2) return false;
-      this.client = _sb2.createClient(url, key);
-      this.connected = true;
-      return true;
-    } catch(e) { return false; }
-  },
-
-  async pull() {
-    if (!this.client) return { ok: false };
-    this.setStatus('⏳ Loading from cloud...', 'loading');
-    try {
-      const { data, error } = await this.client.from('admin_config').select('*');
-      if (error) throw error;
-      let n = 0;
-      (data || []).forEach(row => {
-        if (row.value !== null) {
-          localStorage.setItem(row.key, JSON.stringify(row.value));
-          n++;
-        }
+      const r = await fetch(this.url + '/rest/v1/admin_config?select=key&limit=1', {
+        headers: this._headers()
       });
-      this.setStatus('✅ Loaded ' + n + ' items — refresh to see changes', 'ok');
-      return { ok: true, count: n };
-    } catch (e) {
-      this.setStatus('❌ Pull failed: ' + e.message, 'err');
-      return { ok: false };
+      this.connected = r.ok;
+      return r.ok;
+    } catch(e) {
+      this.connected = false;
+      return false;
     }
   },
 
   async push() {
-    if (!this.client) return { ok: false };
+    if (!this.connected) return { ok: false, msg: 'Not connected' };
     this.setStatus('⏳ Saving to cloud...', 'loading');
     try {
       const rows = SYNC_KEYS_LIST.map(key => {
@@ -745,659 +739,53 @@ const CloudSync = {
         try { value = raw ? JSON.parse(raw) : null; } catch(e) { value = raw; }
         return { key, value, updated_at: new Date().toISOString() };
       }).filter(r => r.value !== null);
-      const { error } = await this.client
-        .from('admin_config')
-        .upsert(rows, { onConflict: 'key' });
-      if (error) throw error;
-      this.setStatus('✅ Saved ' + rows.length + ' items to cloud', 'ok');
-      return { ok: true };
-    } catch (e) {
-      this.setStatus('❌ Push failed: ' + e.message, 'err');
+
+      const r = await fetch(this.url + '/rest/v1/admin_config', {
+        method: 'POST',
+        headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(rows)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      this.setStatus('✅ ' + rows.length + ' items saved · ' + new Date().toLocaleTimeString('en-IN'), 'ok');
+      return { ok: true, count: rows.length };
+    } catch(e) {
+      this.setStatus('❌ Save failed: ' + e.message, 'err');
+      return { ok: false };
+    }
+  },
+
+  async pull() {
+    if (!this.connected) return { ok: false };
+    this.setStatus('⏳ Loading from cloud...', 'loading');
+    try {
+      const r = await fetch(this.url + '/rest/v1/admin_config?select=*', {
+        headers: this._headers()
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      let n = 0;
+      data.forEach(row => {
+        if (row.value !== null && row.value !== undefined) {
+          localStorage.setItem(row.key, JSON.stringify(row.value));
+          n++;
+        }
+      });
+      this.setStatus('✅ Loaded ' + n + ' items · Refresh to apply', 'ok');
+      return { ok: true, count: n };
+    } catch(e) {
+      this.setStatus('❌ Load failed: ' + e.message, 'err');
       return { ok: false };
     }
   },
 
   saveOne(key, value) {
-    if (!this.client || !this.connected) return;
-    try {
-      this.client.from('admin_config')
-        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
-        .then(() => {});
-    } catch(e) {}
+    if (!this.connected || !this.url) return;
+    fetch(this.url + '/rest/v1/admin_config', {
+      method: 'POST',
+      headers: { ...this._headers(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{ key, value, updated_at: new Date().toISOString() }])
+    }).catch(e => console.warn('CloudSync.saveOne failed:', e));
   }
 };
 
-// ── CREDENTIALS ───────────────────────────────────────────────────────
-// ── ADMIN CREDENTIALS ────────────────────────────────────────────────
-const ADMIN_EMAIL = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
-const _p1 = atob('VWx0aW1hdGU=');
-const _p2 = atob('QDEyMyM=');
-const ADMIN_PASS  = _p1 + _p2;
 
-// ── LOGIN FUNCTION ────────────────────────────────────────────────────
-function doLogin() {
-  const emailVal = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const passVal  = document.getElementById('loginPass').value;
-  const btn      = document.getElementById('loginBtn');
-  const errEl    = document.getElementById('loginError');
-
-  // Empty check
-  if (!emailVal || !passVal) {
-    errEl.style.display = 'block';
-    errEl.textContent   = 'Please enter your email and password.';
-    return;
-  }
-
-  // Loading state
-  btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;"></span>';
-  btn.disabled  = true;
-  errEl.style.display = 'none';
-
-  // Check credentials
-  setTimeout(function() {
-    if (emailVal === ADMIN_EMAIL && passVal === ADMIN_PASS) {
-      // Success — save session
-      localStorage.setItem('oj_admin_session', JSON.stringify({
-        token: btoa(emailVal + Date.now()),
-        loginAt: Date.now()
-      }));
-      showDashboard();
-    } else {
-      errEl.style.display = 'block';
-      errEl.textContent   = 'Wrong email or password. Please try again.';
-      btn.innerHTML       = 'Sign In to Admin Panel →';
-      btn.disabled        = false;
-    }
-  }, 600);
-}
-
-
-function doLogout() {
-  localStorage.removeItem('oj_admin_session');
-  document.getElementById('adminDashboard').style.display = 'none';
-  document.getElementById('loginPage').style.display = 'flex';
-}
-
-function showDashboard() {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('adminDashboard').style.display = 'block';
-  document.getElementById('adminEmailDisplay').textContent = ADMIN_EMAIL;
-  loadDashboard();
-  renderAdNetworks();
-}
-
-// Check session on load
-window.addEventListener('DOMContentLoaded', () => {
-  // Clear any stale rate limit locks from previous sessions
-  sessionStorage.removeItem('login_attempts');
-  const session = JSON.parse(localStorage.getItem('oj_admin_session') || 'null');
-  // 8-hour session
-  if (session && session.token && (Date.now() - session.loginAt) < 28800000) {
-    showDashboard();
-  } else if (session) {
-    localStorage.removeItem('oj_admin_session');
-  }
-  // Enter key on login
-  document.getElementById('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
-});
-
-// ── NAVIGATION ────────────────────────────────────────────────────────
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  btn.classList.add('active');
-  const titles = { dashboard:'Dashboard', users:'Users', notifications:'Notifications', jobapis:'Job Search APIs', emailapis:'Email APIs', adnetworks:'Ad Networks', credits:'Credit Days Manager', admins:'Admin Users' };
-  document.getElementById('pageTitle').textContent = titles[id] || id;
-  if (id === 'jobapis') renderJobAPIs();
-  if (id === 'emailapis') renderEmailAPIs();
-  if (id === 'credits') renderUsersList();
-  if (id === 'users') renderFullUsers();
-  if (id === 'notifications') renderAllNotifs();
-  if (id === 'admins') renderAdmins();
-}
-
-// ── DASHBOARD ─────────────────────────────────────────────────────────
-function loadDashboard() {
-  const outcomes = JSON.parse(localStorage.getItem('hm_outcome_counts') || '{}');
-  const users = Object.keys(JSON.parse(localStorage.getItem('hm_udb') || '{}')).length;
-  document.getElementById('dash-users').textContent = users;
-  document.getElementById('dash-interviews').textContent = outcomes.interviews || 0;
-  document.getElementById('dash-offers').textContent = outcomes.offers || 0;
-  // API usage
-  const jobAPIs = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[]}');
-  const today = new Date().toDateString();
-  const totalCap = jobAPIs.providers.reduce((s,p) => s+(p.dailyLimit||0), 0);
-  const totalUsed = jobAPIs.providers.reduce((s,p) => s+(p.lastReset===today?p.usedToday||0:0), 0);
-  document.getElementById('dash-searches').textContent = totalUsed;
-  // API usage summary
-  const summaryEl = document.getElementById('apiUsageSummary');
-  if (jobAPIs.providers.length === 0) {
-    summaryEl.innerHTML = '<p style="color:var(--grey-md);font-size:.88rem;text-align:center;padding:16px 0;">No APIs configured. <a href="#" onclick="showPage(\'jobapis\',document.querySelectorAll(\'.nav-item\')[3]);return false;" style="color:var(--teal);">Add your first API →</a></p>';
-  } else {
-    summaryEl.innerHTML = jobAPIs.providers.map(p => {
-      const used = p.lastReset===today ? p.usedToday||0 : 0;
-      const pct = p.dailyLimit ? Math.round(used/p.dailyLimit*100) : 0;
-      return `<div style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:4px;"><span>${p.name}</span><span style="color:${pct>=60?'#ef4444':'var(--teal)'};">${used}/${p.dailyLimit} (${pct}%)</span></div>
-        <div style="height:6px;background:var(--grey-lt);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pct>=60?'#ef4444':'#3dbfa0'};border-radius:3px;"></div></div>
-      </div>`;
-    }).join('');
-  }
-}
-
-// ── JOB APIS ──────────────────────────────────────────────────────────
-function getJobAPIs() { return JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[],"switchEvery":10,"curIdx":0,"curCount":0}'); }
-function saveJobAPIs(data) { localStorage.setItem('hm_job_apis', JSON.stringify(data)); }
-
-function renderJobAPIs() {
-  const config = getJobAPIs();
-  const today = new Date().toDateString();
-  const totalCap = config.providers.reduce((s,p) => s+(p.dailyLimit||0), 0);
-  const totalUsed = config.providers.reduce((s,p) => s+(p.lastReset===today?p.usedToday||0:0), 0);
-  const active = config.providers.filter(p=>p.enabled&&p.key).length;
-  const allTime = config.providers.reduce((s,p) => s+(p.usedTotal||0), 0);
-  document.getElementById('totalApiCap').textContent = totalCap.toLocaleString('en-IN');
-  document.getElementById('totalApiUsed').textContent = totalUsed.toLocaleString('en-IN');
-  document.getElementById('activeApis').textContent = active;
-  document.getElementById('totalAllTime').textContent = allTime.toLocaleString('en-IN');
-  document.getElementById('switchEverySelect').value = config.switchEvery || 10;
-
-  const list = document.getElementById('jobApiList');
-  if (config.providers.length === 0) {
-    list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No job APIs added yet. Click "+ Add API" to get started.</p>';
-    return;
-  }
-  list.innerHTML = config.providers.map((p,i) => {
-    const used = p.lastReset===today ? p.usedToday||0 : 0;
-    const pct = p.dailyLimit ? Math.round(used/p.dailyLimit*100) : 0;
-    const isActive = config.providers.filter(x=>x.enabled&&x.key)[config.curIdx % Math.max(1,config.providers.filter(x=>x.enabled&&x.key).length)]?.id === p.id;
-    return `<div class="api-row">
-      <div class="api-icon">🔌</div>
-      <div class="api-info">
-        <div class="api-name">${p.name} ${isActive&&p.enabled?'<span style="font-size:.7rem;background:rgba(61,191,160,.15);color:#16a34a;padding:2px 8px;border-radius:8px;font-weight:700;">ACTIVE</span>':''}</div>
-        <div class="api-detail">${p.providerType} · ${p.dailyLimit}/day · Total: ${p.usedTotal||0}</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-          <div class="usage-bar" style="width:120px;"><div class="usage-fill${pct>=80?' danger':pct>=60?' warn':''}" style="width:${pct}%;"></div></div>
-          <span style="font-size:.78rem;color:${pct>=60?'#dc2626':'var(--grey-md)'};">${used}/${p.dailyLimit} today (${pct}%)</span>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
-        <label class="toggle"><input type="checkbox" ${p.enabled?'checked':''} onchange="toggleJobAPI(${i},this.checked)"><div class="toggle-slider"></div></label>
-        <button class="btn btn-ghost-navy btn-sm" onclick="deleteJobAPI(${i})">Remove</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function openAddJobAPI() {
-  document.getElementById('addJobAPIModal').classList.add('open');
-  document.getElementById('newApiType').value = 'rapidapi';
-  document.getElementById('newApiName').value = '';
-  document.getElementById('newApiKey').value = '';
-  document.getElementById('newApiLimit').value = '500';
-  document.getElementById('adzunaAppIdGroup').style.display = 'none';
-}
-
-function updateApiPlaceholder() {
-  const t = document.getElementById('newApiType').value;
-  document.getElementById('adzunaAppIdGroup').style.display = t==='adzuna' ? 'block' : 'none';
-  const limits = {rapidapi:500,adzuna:1000,indeed:250,reed:5000,jooble:1000,custom:500};
-  document.getElementById('newApiLimit').value = limits[t]||500;
-}
-
-function saveJobAPI() {
-  const config = getJobAPIs();
-  const newAPI = {
-    id: Date.now(),
-    name: document.getElementById('newApiName').value || 'API ' + (config.providers.length+1),
-    providerType: document.getElementById('newApiType').value,
-    key: document.getElementById('newApiKey').value,
-    key2: document.getElementById('newApiKey2')?.value || '',
-    dailyLimit: parseInt(document.getElementById('newApiLimit').value) || 500,
-    enabled: true, usedToday: 0, usedTotal: 0, lastReset: new Date().toDateString()
-  };
-  if (!newAPI.key) { alert('API key is required.'); return; }
-  config.providers.push(newAPI);
-  saveJobAPIs(config);
-  closeModal('addJobAPIModal');
-  renderJobAPIs();
-  loadDashboard();
-}
-
-function toggleJobAPI(i, enabled) {
-  const config = getJobAPIs();
-  config.providers[i].enabled = enabled;
-  saveJobAPIs(config);
-}
-
-function deleteJobAPI(i) {
-  if (!confirm('Remove this API?')) return;
-  const config = getJobAPIs();
-  config.providers.splice(i, 1);
-  saveJobAPIs(config);
-  renderJobAPIs();
-}
-
-function updateSwitchEvery(v) {
-  const config = getJobAPIs();
-  config.switchEvery = parseInt(v);
-  saveJobAPIs(config);
-}
-
-// ── EMAIL APIS ────────────────────────────────────────────────────────
-function getEmailAPIs() { return JSON.parse(localStorage.getItem('hm_email_apis') || '{"providers":[],"switchEvery":10}'); }
-function saveEmailAPIs(data) { localStorage.setItem('hm_email_apis', JSON.stringify(data)); }
-
-function prefillEmail(type, name, limit) {
-  document.getElementById('newEmailProvider').value = type;
-  document.getElementById('newEmailName').value = name + ' Account 1';
-  document.getElementById('newEmailLimit').value = limit;
-  document.getElementById('addEmailAPIModal').classList.add('open');
-}
-
-function renderEmailAPIs() {
-  const config = getEmailAPIs();
-  const today = new Date().toDateString();
-  const totalCap = config.providers.reduce((s,p) => s+(p.dailyLimit||0), 0);
-  const totalUsed = config.providers.reduce((s,p) => s+(p.lastReset===today?p.usedToday||0:0), 0);
-  const active = config.providers.filter(p=>p.enabled&&p.key).length;
-  document.getElementById('emailTotalCap').textContent = totalCap;
-  document.getElementById('emailTodayUsed').textContent = totalUsed;
-  document.getElementById('emailActiveCount').textContent = active;
-  const list = document.getElementById('emailApiList');
-  if (config.providers.length === 0) {
-    list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No email providers added. Click a provider above or "+ Add Provider" to get started.</p>';
-    return;
-  }
-  list.innerHTML = config.providers.map((p,i) => {
-    const used = p.lastReset===today ? p.usedToday||0 : 0;
-    const pct = p.dailyLimit ? Math.round(used/p.dailyLimit*100) : 0;
-    return `<div class="api-row">
-      <div class="api-icon">📧</div>
-      <div class="api-info">
-        <div class="api-name">${p.name} <span style="font-size:.78rem;color:var(--grey-md);">— ${p.providerType}</span></div>
-        <div class="api-detail">From: ${p.fromName} &lt;${p.fromEmail}&gt; · ${p.dailyLimit}/day</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-          <div class="usage-bar" style="width:120px;"><div class="usage-fill${pct>=60?' warn':''}" style="width:${pct}%;"></div></div>
-          <span style="font-size:.78rem;color:var(--grey-md);">${used}/${p.dailyLimit} today</span>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
-        <label class="toggle"><input type="checkbox" ${p.enabled?'checked':''} onchange="toggleEmailAPI(${i},this.checked)"><div class="toggle-slider"></div></label>
-        <button class="btn btn-ghost-navy btn-sm" onclick="deleteEmailAPI(${i})">Remove</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function openAddEmailAPI() { document.getElementById('addEmailAPIModal').classList.add('open'); }
-
-function saveEmailAPI() {
-  const config = getEmailAPIs();
-  const p = {
-    id: Date.now(),
-    name: document.getElementById('newEmailName').value || 'Email Provider',
-    providerType: document.getElementById('newEmailProvider').value,
-    key: document.getElementById('newEmailKey').value,
-    dailyLimit: parseInt(document.getElementById('newEmailLimit').value) || 100,
-    fromName: document.getElementById('newEmailFromName').value || 'OptaJob',
-    fromEmail: document.getElementById('newEmailFromEmail').value || 'noreply@optajob.com',
-    enabled: true, usedToday: 0, usedTotal: 0, lastReset: new Date().toDateString()
-  };
-  if (!p.key) { alert('API key required.'); return; }
-  config.providers.push(p);
-  saveEmailAPIs(config);
-  closeModal('addEmailAPIModal');
-  renderEmailAPIs();
-}
-
-function toggleEmailAPI(i, v) { const c=getEmailAPIs(); c.providers[i].enabled=v; saveEmailAPIs(c); }
-function deleteEmailAPI(i) { if(!confirm('Remove?')) return; const c=getEmailAPIs(); c.providers.splice(i,1); saveEmailAPIs(c); renderEmailAPIs(); }
-
-// ── AD NETWORKS ───────────────────────────────────────────────────────
-const AD_NETWORKS = [
-  { id:'admob',     name:'Google AdMob',      icon:'📱', note:'Best revenue in India · Apply at admob.google.com · Takes 7-14 days', fields:['App ID','Banner Unit ID','Rewarded Unit ID','Interstitial Unit ID'] },
-  { id:'meta',      name:'Meta Audience',     icon:'👥', note:'Facebook/Instagram ads · High CPM', fields:['App ID','Banner Unit','Rewarded Unit'] },
-  { id:'unity',     name:'Unity Ads',          icon:'🎮', note:'Good fill rate · Strong rewarded video', fields:['Game ID','Rewarded Unit','Banner Unit'] },
-  { id:'applovin',  name:'AppLovin MAX',       icon:'⚡', note:'Mediation — uses multiple networks · Best for revenue', fields:['SDK Key','Rewarded Unit','Banner Unit','Interstitial Unit'] },
-  { id:'ironsource',name:'ironSource',         icon:'🔗', note:'Strong in India', fields:['App Key','Rewarded Unit','Banner Unit'] },
-  { id:'inmobi',    name:'InMobi',             icon:'🇮🇳', note:'Indian company · Great for Indian traffic', fields:['Account ID','Placement ID','Rewarded ID'] },
-];
-
-function renderAdNetworks() {
-  const saved = JSON.parse(localStorage.getItem('hm_ad_networks') || '{}');
-  const list = document.getElementById('adNetworkList');
-  if (!list) return;
-  list.innerHTML = AD_NETWORKS.map(n => {
-    const data = saved[n.id] || {};
-    const configured = n.fields.some(f => data[f]);
-    return `<div style="border:1px solid ${configured?'rgba(61,191,160,.3)':'rgba(0,0,0,.08)'};border-radius:14px;padding:18px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${data.open?'16px':'0'};">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:1.4rem;">${n.icon}</span>
-          <div>
-            <div style="font-weight:700;color:var(--navy);">${n.name}</div>
-            <div style="font-size:.78rem;color:var(--grey-md);">${n.note}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          ${configured ? '<span style="font-size:.75rem;background:rgba(61,191,160,.12);color:#16a34a;padding:3px 10px;border-radius:10px;font-weight:700;">✓ Configured</span>' : ''}
-          <button class="btn btn-ghost-navy btn-sm" onclick="toggleAdNetwork('${n.id}',this)">${data.open ? 'Collapse ▲' : 'Configure ▼'}</button>
-        </div>
-      </div>
-      <div id="adnet-${n.id}" style="display:${data.open?'block':'none'}">
-        <div style="padding:8px;background:rgba(245,158,11,.06);border-radius:8px;font-size:.8rem;color:#92400e;margin-bottom:14px;">
-          🔧 Test mode: Use Google test IDs during development. Replace with real IDs before Play Store submission.
-        </div>
-        ${n.fields.map(f => `<div class="form-group"><label class="form-label">${f}</label><input type="text" class="form-input" placeholder="Enter ${f}" value="${data[f]||''}" onchange="saveAdNetwork('${n.id}','${f}',this.value)"></div>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function toggleAdNetwork(id, btn) {
-  const el = document.getElementById('adnet-'+id);
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  btn.textContent = isOpen ? 'Configure ▼' : 'Collapse ▲';
-  const saved = JSON.parse(localStorage.getItem('hm_ad_networks') || '{}');
-  if (!saved[id]) saved[id] = {};
-  saved[id].open = !isOpen;
-  localStorage.setItem('hm_ad_networks', JSON.stringify(saved));
-}
-
-function saveAdNetwork(id, field, value) {
-  const saved = JSON.parse(localStorage.getItem('hm_ad_networks') || '{}');
-  if (!saved[id]) saved[id] = {};
-  saved[id][field] = value;
-  localStorage.setItem('hm_ad_networks', JSON.stringify(saved));
-}
-
-// ── USERS & CREDIT DAYS ───────────────────────────────────────────────
-function getUsers() { return Object.entries(JSON.parse(localStorage.getItem('hm_udb') || '{}')).map(([,v]) => v); }
-
-function renderUsersList() {
-  const users = getUsers().filter(u => !u.isAdmin && u.status === 'active');
-  const list = document.getElementById('usersList');
-  if (users.length === 0) { list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No active users yet.</p>'; return; }
-  list.innerHTML = users.map(u => {
-    const fl = u.firstLoginAt || u.registeredAt || Date.now();
-    const cd = u.creditDays ?? 14;
-    const daysLeft = cd === 9999 ? '∞' : Math.max(0, cd - Math.floor((Date.now()-fl)/86400000));
-    return `<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:var(--off-white);margin-bottom:8px;cursor:pointer;border:2px solid transparent;" onclick="toggleUserSelect(this,'${u.email}')">
-      <input type="checkbox" style="width:16px;height:16px;accent-color:var(--teal);" class="user-checkbox" data-email="${u.email}">
-      <div style="flex:1;">
-        <div style="font-weight:600;font-size:.9rem;color:var(--navy);">${u.name}</div>
-        <div style="font-size:.78rem;color:var(--grey-md);">${u.email}</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-weight:700;font-size:.9rem;color:${typeof daysLeft==='number'&&daysLeft===0?'var(--grey-md)':'var(--teal)'};">${daysLeft}${typeof daysLeft==='number'?' days left':''}</div>
-        <div style="font-size:.75rem;color:var(--grey-md);">of ${cd===9999?'∞':cd} days</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function toggleUserSelect(el, email) {
-  const cb = el.querySelector('.user-checkbox');
-  cb.checked = !cb.checked;
-  el.style.borderColor = cb.checked ? 'var(--teal)' : 'transparent';
-  el.style.background = cb.checked ? 'rgba(61,191,160,.06)' : 'var(--off-white)';
-}
-
-function selectAllUsers() {
-  document.querySelectorAll('.user-checkbox').forEach(cb => {
-    cb.checked = true;
-    cb.closest('div').style.borderColor = 'var(--teal)';
-    cb.closest('div').style.background = 'rgba(61,191,160,.06)';
-  });
-}
-
-function applyCreditDays() {
-  const selected = [...document.querySelectorAll('.user-checkbox:checked')].map(cb => cb.dataset.email);
-  if (!selected.length) { alert('Select at least one user.'); return; }
-  const days = parseInt(document.getElementById('newCreditDays').value);
-  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  selected.forEach(email => {
-    if (udb[email]) {
-      const old = udb[email].creditDays ?? 14;
-      udb[email].creditDays = days;
-      // Add notification for this user
-      const notifs = JSON.parse(localStorage.getItem(`hm_un_${email}`) || '[]');
-      const msg = days > old
-        ? `🎉 Your free daily credits have been extended to ${days===9999?'unlimited':days+' days'} by the admin!`
-        : `ℹ Your free credit period has been updated to ${days} days by the admin.`;
-      notifs.unshift({ id: Date.now(), msg, type: 'credit', read: false, at: Date.now() });
-      localStorage.setItem(`hm_un_${email}`, JSON.stringify(notifs));
-    }
-  });
-  localStorage.setItem('hm_udb', JSON.stringify(udb));
-  alert(`✅ Applied ${days===9999?'unlimited':days+' days'} to ${selected.length} user(s). Notifications sent.`);
-  renderUsersList();
-}
-
-function renderFullUsers() {
-  const users = getUsers();
-  const list = document.getElementById('fullUsersList');
-  if (!users.length) { list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No users registered yet.</p>'; return; }
-  list.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.88rem;">
-    <thead><tr style="background:var(--off-white);">
-      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Name</th>
-      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Email</th>
-      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Status</th>
-      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Plan</th>
-      <th style="padding:12px;text-align:left;font-weight:700;color:var(--navy);border-bottom:2px solid rgba(0,0,0,.06);">Joined</th>
-    </tr></thead>
-    <tbody>${users.map(u => `
-      <tr style="border-bottom:1px solid rgba(0,0,0,.04);">
-        <td style="padding:12px;font-weight:600;color:var(--navy);">${u.name||'—'}</td>
-        <td style="padding:12px;color:var(--grey-dk);">${u.email}</td>
-        <td style="padding:12px;"><span style="padding:3px 8px;border-radius:8px;font-size:.75rem;font-weight:700;background:${u.status==='active'?'rgba(34,197,94,.12)':'rgba(239,68,68,.1)'};color:${u.status==='active'?'#16a34a':'#dc2626'};">${u.status||'unknown'}</span></td>
-        <td style="padding:12px;color:var(--grey-dk);text-transform:capitalize;">${u.plan||'free'}</td>
-        <td style="padding:12px;color:var(--grey-md);">${u.registeredAt ? new Date(u.registeredAt).toLocaleDateString('en-IN') : '—'}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-
-// ── ADMINS ────────────────────────────────────────────────────────────
-function addAdmin() {
-  const email = document.getElementById('newAdminEmail').value.trim();
-  if (!email || !/\S+@\S+\.\S+/.test(email)) { alert('Enter a valid email.'); return; }
-  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  if (udb[email]) { udb[email].isAdmin = true; udb[email].plan = 'elite'; }
-  else { udb[email] = { name:'Admin', email, isAdmin:true, plan:'elite', status:'pending_admin', registeredAt:Date.now() }; }
-  localStorage.setItem('hm_udb', JSON.stringify(udb));
-  document.getElementById('newAdminEmail').value = '';
-  alert(`✅ ${email} now has admin access.`);
-  renderAdmins();
-}
-
-function renderAdmins() {
-  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  const admins = Object.values(udb).filter(u => u.isAdmin && u.email !== ADMIN_EMAIL);
-  const list = document.getElementById('adminsList');
-  if (!list) return;
-  list.innerHTML = admins.length === 0 ? '<p style="color:var(--grey-md);font-size:.88rem;">No additional admins added yet.</p>' :
-    admins.map(a => `<div class="api-row">
-      <div class="api-icon" style="background:rgba(27,63,125,.1);">👤</div>
-      <div class="api-info"><div class="api-name">${a.name||'Admin'}</div><div class="api-detail">${a.email}</div></div>
-      <button class="btn btn-danger btn-sm" onclick="removeAdmin('${a.email}')">Remove</button>
-    </div>`).join('');
-}
-
-function removeAdmin(email) {
-  if (!confirm('Remove admin access from ' + email + '?')) return;
-  const udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  if (udb[email]) { udb[email].isAdmin = false; localStorage.setItem('hm_udb', JSON.stringify(udb)); }
-  renderAdmins();
-}
-
-// ── NOTIFICATIONS ─────────────────────────────────────────────────────
-function renderAllNotifs() {
-  const notifs = JSON.parse(localStorage.getItem('hm_notifs') || '[]');
-  const list = document.getElementById('allNotifsList');
-  if (!notifs.length) { list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No notifications yet.</p>'; return; }
-  list.innerHTML = notifs.map(n => `
-    <div class="notif-item${n.read?'':' unread'}">
-      <div class="notif-dot" style="background:${n.type==='job_api'?'#ef4444':n.type==='email_api'?'#f59e0b':'#3dbfa0'};"></div>
-      <div>
-        <div style="font-size:.9rem;color:var(--grey-dk);">${n.msg}</div>
-        <div style="font-size:.75rem;color:var(--grey-md);margin-top:3px;">${new Date(n.at).toLocaleString('en-IN')}</div>
-      </div>
-    </div>`).join('');
-}
-
-function markAllNotifsRead() {
-  const n = JSON.parse(localStorage.getItem('hm_notifs') || '[]').map(x=>({...x,read:true}));
-  localStorage.setItem('hm_notifs', JSON.stringify(n));
-  renderAllNotifs();
-}
-
-// ── UTILS ─────────────────────────────────────────────────────────────
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
-
-
-// ── Auto-sync localStorage writes to cloud ───────────────────────────
-(function() {
-  const _orig = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(key, value) {
-    _orig(key, value); // Always save locally first
-    // Safe cloud sync — only if CloudSync is defined and connected
-    try {
-      if (typeof CloudSync !== 'undefined' && CloudSync.connected && SYNC_KEYS_LIST.includes(key)) {
-        const parsed = JSON.parse(value);
-        CloudSync.saveOne(key, parsed);
-      }
-    } catch(e) {} // Never let cloud sync crash local operations
-  };
-})();
-
-// ── CLOUD SYNC FUNCTIONS ──────────────────────────────────────────────
-async function cloudConnect() {
-  const url = document.getElementById('sb-url').value.trim();
-  const key = document.getElementById('sb-key').value.trim();
-  const result = await CloudSync.connect(url, key);
-  if (result.ok) {
-    // Auto-pull after connecting
-    setTimeout(() => cloudPull(), 500);
-  }
-}
-
-async function cloudPull() {
-  if (!CloudSync.connected) {
-    document.getElementById('cloud-status').textContent = '❌ Not connected. Enter credentials first.';
-    document.getElementById('cloud-status').style.color = '#ef4444';
-    return;
-  }
-  const result = await CloudSync.pull();
-  if (result.ok) {
-    setTimeout(() => {
-      if (confirm('Cloud data loaded! Refresh the page to see all updated settings?')) {
-        window.location.reload();
-      }
-    }, 500);
-  }
-}
-
-async function cloudPush() {
-  if (!CloudSync.connected) {
-    document.getElementById('cloud-status').textContent = '❌ Not connected. Enter credentials first.';
-    document.getElementById('cloud-status').style.color = '#ef4444';
-    return;
-  }
-  await CloudSync.push();
-}
-
-function copySql() {
-  const sql = `CREATE TABLE IF NOT EXISTS admin_config (
-  key TEXT PRIMARY KEY,
-  value JSONB,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "optajob_admin"
-  ON admin_config FOR ALL USING (true) WITH CHECK (true);`;
-  navigator.clipboard.writeText(sql).then(() => {
-    const btn = document.getElementById('copy-sql-btn');
-    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = 'Copy SQL'; }, 2000); }
-  });
-}
-
-// ── AUTO-CONNECT ON PAGE LOAD ─────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', async () => {
-  // Pre-fill saved credentials
-  const { url, key } = CloudSync.getCreds();
-  const urlEl = document.getElementById('sb-url');
-  const keyEl = document.getElementById('sb-key');
-  if (urlEl && url) urlEl.value = url;
-  if (keyEl && key) keyEl.value = key;
-
-  // Auto-connect if credentials saved
-  if (url && key) {
-    const ok = await CloudSync.autoConnect();
-    if (ok) {
-      const statusEl = document.getElementById('cloud-status');
-      if (statusEl) {
-        statusEl.textContent = '✅ Connected · Click Save All to Cloud to sync';
-        statusEl.style.color = '#5dd4b8';
-      }
-    }
-  }
-});
-
-
-// ── DASHBOARD CLOUD SYNC HELPERS ──────────────────────────────────────
-async function cloudConnectDash() {
-  const url = document.getElementById('sb-url').value.trim();
-  const key = document.getElementById('sb-key').value.trim();
-  if (!url || !key) { alert('Please enter both the Project URL and Anon Key.'); return; }
-  const result = await CloudSync.connect(url, key);
-  if (result.ok) {
-    document.getElementById('cloud-status').textContent = '✅ Connected · Auto-sync active';
-    document.getElementById('cloud-status').style.color = '#5dd4b8';
-    document.getElementById('cloud-setup').style.display = 'none';
-    cloudPushDash();
-  }
-}
-
-async function cloudPushDash() {
-  if (!CloudSync.connected) {
-    document.getElementById('cloud-status').textContent = '⚠️ Not connected — click Setup to enter credentials';
-    document.getElementById('cloud-status').style.color = '#fbbf24';
-    document.getElementById('cloud-setup').style.display = 'flex';
-    return;
-  }
-  document.getElementById('cloud-status').textContent = '⏳ Saving to cloud...';
-  const result = await CloudSync.push();
-  if (result.ok) {
-    document.getElementById('cloud-status').textContent = '✅ All data saved to cloud · ' + new Date().toLocaleTimeString('en-IN');
-    document.getElementById('cloud-status').style.color = '#5dd4b8';
-  } else {
-    document.getElementById('cloud-status').textContent = '❌ Save failed — check your connection';
-    document.getElementById('cloud-status').style.color = '#f87171';
-  }
-}
-
-async function cloudPullDash() {
-  if (!CloudSync.connected) {
-    document.getElementById('cloud-status').textContent = '⚠️ Not connected — click Setup first';
-    document.getElementById('cloud-status').style.color = '#fbbf24';
-    document.getElementById('cloud-setup').style.display = 'flex';
-    return;
-  }
-  document.getElementById('cloud-status').textContent = '⏳ Loading from cloud...';
-  const result = await CloudSync.pull();
-  if (result.ok) {
-    document.getElementById('cloud-status').textContent = '✅ Loaded ' + result.count + ' items · Refresh page to see changes';
-    document.getElementById('cloud-status').style.color = '#5dd4b8';
-  }
-}
-
-</script>
-</body>
-</html>
