@@ -162,9 +162,63 @@ body{background:#f1f5f9;}
 
         <!-- DASHBOARD PAGE -->
         <div class="page active" id="page-dashboard">
-          <div class="alert alert-info" style="margin-bottom:24px;">
-            💡 <strong>Sync Note:</strong> API keys configured here are stored in your browser's local storage. To sync with the app across devices, connect Supabase (see Pending Tasks in the PDF guide).
-          </div>
+          <!-- ☁️ CLOUD SYNC CARD ON DASHBOARD -->
+<div style="background:linear-gradient(135deg,#1b3f7d,#0e2550);border-radius:16px;padding:20px 24px;margin-bottom:24px;color:white;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:28px;">☁️</span>
+      <div>
+        <div style="font-weight:700;font-size:15px;">Cloud Sync — Supabase</div>
+        <div id="cloud-status" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;">Not connected · APIs stored in browser only</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button onclick="document.getElementById('cloud-setup').style.display=document.getElementById('cloud-setup').style.display==='none'?'flex':'none'"
+        style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+        ⚙️ Setup
+      </button>
+      <button onclick="cloudPushDash()"
+        style="background:#3dbfa0;border:none;color:white;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">
+        ⬆️ Save All to Cloud
+      </button>
+      <button onclick="cloudPullDash()"
+        style="background:rgba(61,191,160,.2);border:1px solid #3dbfa0;color:#5dd4b8;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+        ⬇️ Load from Cloud
+      </button>
+    </div>
+  </div>
+
+  <!-- Setup panel (hidden by default) -->
+  <div id="cloud-setup" style="display:none;flex-direction:column;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15);">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Project URL</div>
+        <input type="text" id="sb-url" placeholder="https://xxxx.supabase.co"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:white;font-size:12px;font-family:monospace;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">Anon Key</div>
+        <input type="password" id="sb-key" placeholder="eyJhbGci..."
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:white;font-size:12px;font-family:monospace;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="cloudConnectDash()"
+        style="background:#3dbfa0;border:none;color:white;padding:9px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">
+        🔌 Connect
+      </button>
+      <a href="https://supabase.com/dashboard" target="_blank"
+        style="color:rgba(255,255,255,.5);font-size:12px;text-decoration:none;">
+        Get keys from supabase.com →
+      </a>
+    </div>
+    <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:10px 12px;font-size:11.5px;color:rgba(255,255,255,.6);line-height:1.7;">
+      <b style="color:white;">First time?</b> 1. Create free account at supabase.com &nbsp;·&nbsp;
+      2. New project → Settings → API → copy URL &amp; anon key &nbsp;·&nbsp;
+      3. SQL Editor → run: <code style="color:#68d391;">CREATE TABLE admin_config (key TEXT PRIMARY KEY, value JSONB, updated_at TIMESTAMPTZ DEFAULT NOW()); ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY; CREATE POLICY "p" ON admin_config FOR ALL USING (true) WITH CHECK (true);</code>
+    </div>
+  </div>
+</div>
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-card-icon" style="background:rgba(61,191,160,.1);">👤</div>
@@ -1283,10 +1337,62 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (url && key) {
     const ok = await CloudSync.autoConnect();
     if (ok) {
-      CloudSync.setStatus('✅ Auto-connected to Supabase (auto-sync active)', 'ok');
+      const statusEl = document.getElementById('cloud-status');
+      if (statusEl) {
+        statusEl.textContent = '✅ Connected · Click Save All to Cloud to sync';
+        statusEl.style.color = '#5dd4b8';
+      }
     }
   }
 });
+
+
+// ── DASHBOARD CLOUD SYNC HELPERS ──────────────────────────────────────
+async function cloudConnectDash() {
+  const url = document.getElementById('sb-url').value.trim();
+  const key = document.getElementById('sb-key').value.trim();
+  if (!url || !key) { alert('Please enter both the Project URL and Anon Key.'); return; }
+  const result = await CloudSync.connect(url, key);
+  if (result.ok) {
+    document.getElementById('cloud-status').textContent = '✅ Connected · Auto-sync active';
+    document.getElementById('cloud-status').style.color = '#5dd4b8';
+    document.getElementById('cloud-setup').style.display = 'none';
+    cloudPushDash();
+  }
+}
+
+async function cloudPushDash() {
+  if (!CloudSync.connected) {
+    document.getElementById('cloud-status').textContent = '⚠️ Not connected — click Setup to enter credentials';
+    document.getElementById('cloud-status').style.color = '#fbbf24';
+    document.getElementById('cloud-setup').style.display = 'flex';
+    return;
+  }
+  document.getElementById('cloud-status').textContent = '⏳ Saving to cloud...';
+  const result = await CloudSync.push();
+  if (result.ok) {
+    document.getElementById('cloud-status').textContent = '✅ All data saved to cloud · ' + new Date().toLocaleTimeString('en-IN');
+    document.getElementById('cloud-status').style.color = '#5dd4b8';
+  } else {
+    document.getElementById('cloud-status').textContent = '❌ Save failed — check your connection';
+    document.getElementById('cloud-status').style.color = '#f87171';
+  }
+}
+
+async function cloudPullDash() {
+  if (!CloudSync.connected) {
+    document.getElementById('cloud-status').textContent = '⚠️ Not connected — click Setup first';
+    document.getElementById('cloud-status').style.color = '#fbbf24';
+    document.getElementById('cloud-setup').style.display = 'flex';
+    return;
+  }
+  document.getElementById('cloud-status').textContent = '⏳ Loading from cloud...';
+  const result = await CloudSync.pull();
+  if (result.ok) {
+    document.getElementById('cloud-status').textContent = '✅ Loaded ' + result.count + ' items · Refresh page to see changes';
+    document.getElementById('cloud-status').style.color = '#5dd4b8';
+  }
+}
 
 </script>
 </body>
