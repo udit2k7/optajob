@@ -646,7 +646,63 @@ CREATE POLICY "optajob_admin"
 
 </div>
 
-<script src="/assets/js/main.js"></script>
+<script src="/assets/js/main.js">
+// ── DASHBOARD CLOUD SYNC FUNCTIONS ───────────────────────────────────
+async function cloudConnectDash() {
+  const url = document.getElementById('sb-url').value.trim();
+  const key = document.getElementById('sb-key').value.trim();
+  if (!url || !key) { alert('Please enter both Project URL and Anon Key.'); return; }
+  const result = await CloudSync.connect(url, key);
+  if (result.ok) {
+    document.getElementById('cloud-setup').style.display = 'none';
+    cloudPushDash();
+  }
+}
+
+async function cloudPushDash() {
+  if (!CloudSync.connected) {
+    const st = document.getElementById('cloud-status');
+    if (st) { st.textContent = '⚠️ Not connected — click Setup first'; st.style.color = '#fbbf24'; }
+    document.getElementById('cloud-setup').style.display = 'flex';
+    return;
+  }
+  const result = await CloudSync.push();
+  if (result.ok) {
+    const st = document.getElementById('cloud-status');
+    if (st) { st.textContent = '✅ ' + result.count + ' items saved · ' + new Date().toLocaleTimeString('en-IN'); st.style.color = '#5dd4b8'; }
+  }
+}
+
+async function cloudPullDash() {
+  if (!CloudSync.connected) {
+    const st = document.getElementById('cloud-status');
+    if (st) { st.textContent = '⚠️ Not connected — click Setup first'; st.style.color = '#fbbf24'; }
+    document.getElementById('cloud-setup').style.display = 'flex';
+    return;
+  }
+  const result = await CloudSync.pull();
+  if (result.ok) {
+    const st = document.getElementById('cloud-status');
+    if (st) { st.textContent = '✅ Loaded ' + result.count + ' items — refreshing...'; st.style.color = '#5dd4b8'; }
+    setTimeout(() => location.reload(), 1500);
+  }
+}
+
+function copySql() {
+  const sql = `CREATE TABLE IF NOT EXISTS admin_config (
+  key TEXT PRIMARY KEY,
+  value JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "optajob_admin" ON admin_config FOR ALL USING (true) WITH CHECK (true);`;
+  navigator.clipboard.writeText(sql).then(() => {
+    const btn = document.getElementById('copy-sql-btn');
+    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = 'Copy SQL', 2000); }
+  }).catch(() => alert('Copy failed — please copy manually from the SQL box'));
+}
+
+</script>
 <script>
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -787,5 +843,169 @@ const CloudSync = {
     }).catch(e => console.warn('CloudSync.saveOne failed:', e));
   }
 };
+
+// ── CREDENTIALS ───────────────────────────────────────────────────────
+const ADMIN_EMAIL = atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
+const _p1 = atob('VWx0aW1hdGU=');
+const _p2 = atob('QDEyMyM=');
+const ADMIN_PASS  = _p1 + _p2;
+
+// ── LOGIN ─────────────────────────────────────────────────────────────
+function doLogin() {
+  const emailVal = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const passVal  = document.getElementById('loginPass').value;
+  const btn      = document.getElementById('loginBtn');
+  const errEl    = document.getElementById('loginError');
+  if (!emailVal || !passVal) {
+    errEl.style.display='block'; errEl.textContent='Please enter email and password.'; return;
+  }
+  btn.innerHTML='<span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;"></span>';
+  btn.disabled=true; errEl.style.display='none';
+  setTimeout(function(){
+    if(emailVal===ADMIN_EMAIL && passVal===ADMIN_PASS){
+      localStorage.setItem('oj_admin_session', JSON.stringify({
+        token: btoa(emailVal+Date.now()), loginAt: Date.now()
+      }));
+      showDashboard();
+    } else {
+      errEl.style.display='block';
+      errEl.textContent='Wrong email or password.';
+      btn.innerHTML='Sign In to Admin Panel →';
+      btn.disabled=false;
+    }
+  }, 600);
+}
+
+// ── SHOW/HIDE DASHBOARD ───────────────────────────────────────────────
+function showDashboard() {
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('adminDashboard').style.display='block';
+  const el=document.getElementById('adminEmailDisplay');
+  if(el) el.textContent=ADMIN_EMAIL;
+  loadDashboard();
+  renderAdNetworks();
+}
+function showLogin() {
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('adminDashboard').style.display='none';
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────────
+function doLogout() {
+  localStorage.removeItem('oj_admin_session');
+  showLogin();
+}
+
+// ── PAGE NAVIGATION ───────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const page=document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles={
+    dashboard:'Dashboard',users:'Users',notifications:'Notifications',
+    jobapis:'Job Search APIs',emailapis:'Email APIs',adnetworks:'Ad Networks',
+    credits:'Credit Days',admins:'Admin Users',cloud:'Cloud Sync'
+  };
+  const titleEl=document.getElementById('pageTitle');
+  if(titleEl) titleEl.textContent=titles[id]||id;
+  if(id==='users') loadUsers();
+  if(id==='dashboard') loadDashboard();
+}
+
+// ── LOAD DASHBOARD STATS ──────────────────────────────────────────────
+function loadDashboard() {
+  try {
+    const udb=JSON.parse(localStorage.getItem('hm_udb')||'{}');
+    const users=Object.values(udb);
+    const now=Date.now();
+    const weekAgo=now-7*86400000;
+    const newThisWeek=users.filter(u=>u.registeredAt>weekAgo).length;
+    const el=document.getElementById('dash-users');
+    if(el) el.innerHTML=users.length+'<div style="font-size:11px;color:#3dbfa0;margin-top:2px;">+'+newThisWeek+' this week</div>';
+    const counts=JSON.parse(localStorage.getItem('hm_outcome_counts')||'{"interviews":0,"offers":0,"searches":0}');
+    const di=document.getElementById('dash-interviews'); if(di) di.textContent=counts.interviews||0;
+    const dof=document.getElementById('dash-offers'); if(dof) dof.textContent=counts.offers||0;
+    const ds=document.getElementById('dash-searches'); if(ds) ds.textContent=counts.searches||0;
+    const jobCfg=JSON.parse(localStorage.getItem('hm_job_apis')||'{"providers":[]}');
+    const emailCfg=JSON.parse(localStorage.getItem('hm_email_apis')||'{"providers":[]}');
+    const sumEl=document.getElementById('apiUsageSummary');
+    if(sumEl){
+      const jobEnabled=(jobCfg.providers||[]).filter(p=>p.enabled).length;
+      const emailEnabled=(emailCfg.providers||[]).filter(p=>p.enabled).length;
+      sumEl.innerHTML=(jobEnabled?'<div style="color:#3dbfa0;font-size:12px;margin-bottom:4px;">✅ '+jobEnabled+' Job API'+(jobEnabled>1?'s':'')+' active</div>':'<div style="color:#f87171;font-size:12px;margin-bottom:4px;">❌ No Job APIs — <a href="#" onclick="showPage('jobapis',document.querySelectorAll('.nav-item')[3]);return false;" style="color:#f87171;">Add one →</a></div>')
+        +(emailEnabled?'<div style="color:#3dbfa0;font-size:12px;">✅ '+emailEnabled+' Email API'+(emailEnabled>1?'s':'')+' active</div>':'<div style="color:#f87171;font-size:12px;">❌ No Email APIs — <a href="#" onclick="showPage('emailapis',document.querySelectorAll('.nav-item')[4]);return false;" style="color:#f87171;">Add one →</a></div>');
+    }
+  } catch(e) { console.warn('loadDashboard error:',e); }
+}
+
+// ── LOAD USERS ────────────────────────────────────────────────────────
+function loadUsers() {
+  try {
+    const udb=JSON.parse(localStorage.getItem('hm_udb')||'{}');
+    const users=Object.values(udb).sort((a,b)=>(b.registeredAt||0)-(a.registeredAt||0));
+    const el=document.getElementById('usersList');
+    if(!el) return;
+    if(!users.length){
+      el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">No registered users yet.</div>'; return;
+    }
+    el.innerHTML=users.map(u=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700;color:#1b3f7d;font-size:14px;">${u.name||'User'} ${u.isAdmin?'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;">ADMIN</span>':''}</div>
+          <div style="font-size:12px;color:#6b7280;">${u.email} · ${u.plan||'free'} · ${u.status||'active'}</div>
+          <div style="font-size:11px;color:#9ca3af;">${u.registeredAt?new Date(u.registeredAt).toLocaleDateString('en-IN'):''}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          ${u.status!=='suspended'?`<button onclick="suspendUser('${u.email}')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Suspend</button>`
+          :`<button onclick="reinstateUser('${u.email}')" style="background:#f0fdf4;border:1px solid #86efac;color:#16a34a;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Reinstate</button>`}
+        </div>
+      </div>`).join('');
+  } catch(e) { console.warn('loadUsers error:',e); }
+}
+function suspendUser(email){
+  const udb=JSON.parse(localStorage.getItem('hm_udb')||'{}');
+  if(udb[email]){udb[email].status='suspended';localStorage.setItem('hm_udb',JSON.stringify(udb));loadUsers();}
+}
+function reinstateUser(email){
+  const udb=JSON.parse(localStorage.getItem('hm_udb')||'{}');
+  if(udb[email]){udb[email].status='active';localStorage.setItem('hm_udb',JSON.stringify(udb));loadUsers();}
+}
+
+// ── AD NETWORKS ───────────────────────────────────────────────────────
+function renderAdNetworks(){
+  try {
+    const saved=JSON.parse(localStorage.getItem('hm_ad_networks')||'{}');
+    const list=document.getElementById('adNetworkList');
+    if(!list) return;
+  } catch(e) {}
+}
+
+// ── SESSION CHECK + INIT ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const session=JSON.parse(localStorage.getItem('oj_admin_session')||'null');
+  if(session && session.token && (Date.now()-session.loginAt)<28800000){
+    showDashboard();
+  } else {
+    if(session) localStorage.removeItem('oj_admin_session');
+    showLogin();
+  }
+  const {url,key}=CloudSync.getCreds();
+  const urlEl=document.getElementById('sb-url');
+  const keyEl=document.getElementById('sb-key');
+  if(urlEl&&url) urlEl.value=url;
+  if(keyEl&&key) keyEl.value=key;
+  if(url&&key){
+    const ok=await CloudSync.autoConnect();
+    if(ok){
+      const st=document.getElementById('cloud-status');
+      if(st){st.textContent='✅ Connected · Auto-sync active';st.style.color='#5dd4b8';}
+    }
+  }
+  const emailEl=document.getElementById('loginEmail');
+  if(emailEl) emailEl.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus();});
+});
+
 
 
