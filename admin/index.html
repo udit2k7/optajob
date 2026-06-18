@@ -646,6 +646,7 @@ CREATE POLICY "optajob_admin"
 
 </div>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="/assets/js/main.js"></script>
 <script>
 
@@ -679,12 +680,13 @@ const CloudSync = {
 
   async connect(url, anonKey) {
     if (!url || !anonKey) return { ok: false, msg: 'Enter URL and key' };
-    if (typeof supabase === 'undefined') {
-      this.setStatus('❌ Supabase library not loaded', 'err');
+    const _sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+    if (!_sb || !_sb.createClient) {
+      this.setStatus('❌ Supabase library not loaded — check internet connection', 'err');
       return { ok: false, msg: 'Supabase not loaded' };
     }
     try {
-      this.client = supabase.createClient(url.trim(), anonKey.trim());
+      this.client = _sb.createClient(url.trim(), anonKey.trim());
       const { error } = await this.client.from('admin_config').select('key').limit(1);
       if (error) throw error;
       this.connected = true;
@@ -704,7 +706,9 @@ const CloudSync = {
     const { url, key } = this.getCreds();
     if (!url || !key || typeof supabase === 'undefined') return false;
     try {
-      this.client = supabase.createClient(url, key);
+      const _sb2 = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+      if (!_sb2) return false;
+      this.client = _sb2.createClient(url, key);
       this.connected = true;
       return true;
     } catch(e) { return false; }
