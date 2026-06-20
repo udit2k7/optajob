@@ -380,7 +380,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);font-si
 <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
 const {useState,useEffect,useRef,useContext,createContext,useCallback,useMemo,useReducer}=React;
-if(!window.matchMedia)window.matchMedia=()=>({matches:false,addEventListener:()=>{},removeEventListener:()={}});
+if(!window.matchMedia){window.matchMedia=function(){return {matches:false,addEventListener:function(){},removeEventListener:function(){}};};}
 
 // ── OPTAJOB BRAND COLORS (extracted from official logo) ───────────────
 const OJ = {
@@ -437,6 +437,23 @@ const LS = {
   get:(k,d=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}},
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
 };
+
+// ── SUPABASE — real cloud user database (replaces browser-only storage) ──
+const SB_URL=atob('aHR0cHM6Ly9tbWhoaXNzdHJqa2Vzb3l3a2pwbi5zdXBhYmFzZS5jbw==');
+const SB_KEY=atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW0xdGFHaHBjM04wY21wclpYTnZlWGRyYW5CdUlpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT0RFM09EQXdOVGdzSW1WNGNDSTZNakE1TnpNMU5qQTFPSDAuZVFJQUJIeUp5QlJxcFlwQWFIQnRjdDZGS3gyRE5DT1lYb3lTVkp4TTJzOA==');
+async function sb(path,opts={}){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{
+    ...opts,
+    headers:{
+      'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json',
+      'Prefer':opts.prefer||'return=representation',
+      ...(opts.headers||{})
+    }
+  });
+  if(!r.ok){const t=await r.text().catch(()=>'');throw new Error('DB error '+r.status+': '+t.slice(0,150));}
+  const txt=await r.text();
+  return txt?JSON.parse(txt):null;
+}
 
 // ── CREDITS SYSTEM (bugs fixed from v3) ─────────────────────────────
 const EXPIRY_MS = 3*86400000;
@@ -1058,24 +1075,103 @@ function genCode(len=6){return Array.from({length:len},()=>Math.floor(Math.rando
 
 // ── USERS DATABASE ────────────────────────────────────────────────────
 // hm_udb: { "email": { name, email, pwdHash, status, plan, isAdmin, registeredAt, verifiedAt } }
+// ── UDB — backed by real Supabase cloud DB, with a sync local cache ──────
+// Many parts of the UI call UDB.get()/UDB.all() SYNCHRONOUSLY (during render).
+// To support that without a full rewrite, we keep a local cache (_udbCache)
+// that mirrors Supabase. cacheReady() resolves once the first cloud sync runs.
+let _udbCache = LS.get('hm_udb_cache', {});
+let _udbCacheReady = false;
+let _udbReadyResolvers = [];
+function _udbMarkReady(){ _udbCacheReady=true; _udbReadyResolvers.forEach(r=>r()); _udbReadyResolvers=[]; }
+function udbWhenReady(){ return _udbCacheReady ? Promise.resolve() : new Promise(r=>_udbReadyResolvers.push(r)); }
+
+function _rowToUser(row){
+  if(!row) return null;
+  return {
+    name:row.name, email:row.email, pwdHash:row.password_hash,
+    isAdmin:row.is_admin, plan:row.plan, status:row.status,
+    creditDays:row.credit_days, avatarId:row.avatar_id, avatarColor:row.avatar_color,
+    registeredAt:row.registered_at?new Date(row.registered_at).getTime():Date.now(),
+    updatedAt:row.updated_at?new Date(row.updated_at).getTime():Date.now(),
+  };
+}
+function _userToRow(email,data){
+  const row={};
+  if(data.name!==undefined) row.name=data.name;
+  if(data.pwdHash!==undefined) row.password_hash=data.pwdHash;
+  if(data.isAdmin!==undefined) row.is_admin=data.isAdmin;
+  if(data.plan!==undefined) row.plan=data.plan;
+  if(data.status!==undefined) row.status=data.status;
+  if(data.creditDays!==undefined) row.credit_days=data.creditDays;
+  if(data.avatarId!==undefined) row.avatar_id=data.avatarId;
+  if(data.avatarColor!==undefined) row.avatar_color=data.avatarColor;
+  row.email=email.toLowerCase();
+  row.updated_at=new Date().toISOString();
+  return row;
+}
+
+async function _udbSyncFromCloud(){
+  try{
+    const rows=await sb('users?select=*');
+    const db={};
+    (rows||[]).forEach(r=>{ db[r.email.toLowerCase()]=_rowToUser(r); });
+    _udbCache=db;
+    LS.set('hm_udb_cache', db);
+  }catch(e){ console.warn('UDB cloud sync failed, using local cache:', e); }
+  _udbMarkReady();
+}
+_udbSyncFromCloud();
+
 const UDB={
-  get:(email)=>(LS.get('hm_udb',{})[email?.toLowerCase()]||null),
-  all:()=>LS.get('hm_udb',{}),
-  set:(email,data)=>{const db=LS.get('hm_udb',{});db[email.toLowerCase()]={...db[email.toLowerCase()],...data};LS.set('hm_udb',db);},
-  exists:(email)=>!!LS.get('hm_udb',{})[email?.toLowerCase()],
-  admins:()=>Object.values(LS.get('hm_udb',{})).filter(u=>u.isAdmin),
-  isAdmin:(email)=>!!LS.get('hm_udb',{})[email?.toLowerCase()]?.isAdmin,
+  // Synchronous reads — served from cache (fresh after first cloud sync)
+  get:(email)=>(_udbCache[email?.toLowerCase()]||null),
+  all:()=>_udbCache,
+  exists:(email)=>!!_udbCache[email?.toLowerCase()],
+  admins:()=>Object.values(_udbCache).filter(u=>u.isAdmin),
+  isAdmin:(email)=>!!_udbCache[email?.toLowerCase()]?.isAdmin,
+
+  // Async write — goes to Supabase first, then updates the local cache
+  async set(email,data){
+    const lower=email.toLowerCase();
+    const existing=_udbCache[lower]||{};
+    const merged={...existing,...data,email:lower};
+    _udbCache[lower]=merged; LS.set('hm_udb_cache',_udbCache); // optimistic local update
+    try{
+      const row=_userToRow(lower,data);
+      const exists=await sb('users?email=eq.'+encodeURIComponent(lower)+'&select=email');
+      if(exists&&exists.length){
+        await sb('users?email=eq.'+encodeURIComponent(lower),{method:'PATCH',body:JSON.stringify(row),prefer:'return=minimal'});
+      }else{
+        row.registered_at=new Date(merged.registeredAt||Date.now()).toISOString();
+        await sb('users',{method:'POST',body:JSON.stringify(row),prefer:'return=minimal'});
+      }
+    }catch(e){ console.warn('UDB.set cloud write failed (cached locally, will not persist across devices):', e); }
+    return merged;
+  },
+
+  // Async — for callers that want guaranteed-fresh data from the cloud
+  async getFresh(email){
+    try{
+      const rows=await sb('users?email=eq.'+encodeURIComponent(email.toLowerCase())+'&select=*');
+      const u=_rowToUser(rows&&rows[0]);
+      if(u){ _udbCache[email.toLowerCase()]=u; LS.set('hm_udb_cache',_udbCache); }
+      return u;
+    }catch(e){ return UDB.get(email); } // fall back to cache if offline
+  },
 };
 
-// Seed initial admin account if empty
-if(Object.keys(UDB.all()).length===0){
-  hashPwd(atob('VWx0aW1hdGVAMTIzIw==')).then(h=>{
-    UDB.set('2mins.facts@gmail.com',{
-      name:'Admin',email:'2mins.facts@gmail.com',pwdHash:h,
-      status:'active',plan:'elite',isAdmin:true,registeredAt:Date.now(),verifiedAt:Date.now()
+// Seed initial admin account if it doesn't exist yet (runs once, safe to repeat)
+udbWhenReady().then(()=>{
+  const _seedEmail=atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t');
+  if(!UDB.exists(_seedEmail)){
+    hashPwd(atob('VWx0aW1hdGVAMTIzIw==')).then(h=>{
+      UDB.set(_seedEmail,{
+        name:'Admin',pwdHash:h,
+        status:'active',plan:'elite',isAdmin:true,registeredAt:Date.now(),creditDays:9999
+      });
     });
-  });
-}
+  }
+});
 
 // ── AUTH CODES (registration + forgot password) ───────────────────────
 // hm_acodes: { "email": { code, type:"register"|"forgot", expiresAt, used, forgotSentAt } }
@@ -2532,8 +2628,8 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
         </div>
       ))}
 
-      {/* Admin access — only visible to admin email, requires password */}
-      {user.email==='2mins.facts@gmail.com'&&(
+      {/* Admin access — visible to any account with isAdmin flag, requires password */}
+      {user.isAdmin&&(
         <div>
           <div style={{background:'var(--erp)',border:'1px solid rgba(239,68,68,.2)',borderRadius:'var(--r2)',overflow:'hidden'}}>
             <div className="setting-row" style={{cursor:'pointer'}} onClick={()=>setSection('adminLogin')}>
@@ -2769,19 +2865,26 @@ function AdNetworksTab(){
 function AdminUsersTab(){
   const[admins,setAdmins]=useState(()=>Object.values(UDB.all()).filter(u=>u.isAdmin));
   const[newEmail,setNewEmail]=useState('');
-  const addAdmin=()=>{
-    if(!newEmail.trim())return;
-    const u=UDB.get(newEmail);
-    if(!u){alert('No user found with that email. They must register first.');return;}
-    UDB.set(newEmail,{isAdmin:true});
-    setAdmins(Object.values(UDB.all()).filter(u=>u.isAdmin));
-    setNewEmail('');
+  const[busy,setBusy]=useState(false);
+  const addAdmin=async()=>{
+    if(!newEmail.trim()||busy)return;
+    setBusy(true);
+    try{
+      const u=UDB.get(newEmail)||(await UDB.getFresh(newEmail));
+      if(!u){alert('No user found with that email. They must register first.');return;}
+      await UDB.set(newEmail,{isAdmin:true});
+      setAdmins(Object.values(UDB.all()).filter(u=>u.isAdmin));
+      setNewEmail('');
+    }catch(e){alert('Could not update — check your connection and try again.');}
+    finally{setBusy(false);}
   };
-  const remove=email=>{
+  const remove=async email=>{
     if(email===atob('Mm1pbnMuZmFjdHNAZ21haWwuY29t')){alert('Cannot remove the primary admin.');return;}
     if(!window.confirm('Remove admin access for '+email+'?'))return;
-    UDB.set(email,{isAdmin:false});
-    setAdmins(Object.values(UDB.all()).filter(u=>u.isAdmin));
+    try{
+      await UDB.set(email,{isAdmin:false});
+      setAdmins(Object.values(UDB.all()).filter(u=>u.isAdmin));
+    }catch(e){alert('Could not update — check your connection and try again.');}
   };
   return(
     <div>
@@ -3799,15 +3902,15 @@ function CreditDaysManager(){
   const toggle=e=>{const s=new Set(selected);if(s.has(e))s.delete(e);else s.add(e);setSelected(s);};
   const toggleAll=()=>selected.size===users.length?setSelected(new Set()):setSelected(new Set(users.map(u=>u.email)));
 
-  const applyDays=()=>{
+  const applyDays=async()=>{
     if(!selected.size){alert('Select at least one user.');return;}
-    selected.forEach(email=>{
-      const u=UDB.get(email);if(!u)return;
+    for(const email of selected){
+      const u=UDB.get(email);if(!u)continue;
       const old=u.creditDays??DAILY_FREE_DEFAULT_DAYS;
-      UDB.set(email,{creditDays:days});
+      await UDB.set(email,{creditDays:days});
       const msg=days>old?`🎉 Your free daily credits have been extended to ${days===9999?'unlimited':days+' days'} by the admin!`:`ℹ Your free credit period has been updated to ${days} days by the admin.`;
       UserNotifs.add(email,msg,'credit');
-    });
+    }
     setApplied(`Applied to ${selected.size} user${selected.size!==1?'s':''}. Notifications sent.`);
     setUsers(Object.values(UDB.all()).filter(u=>!u.isAdmin&&u.status==='active'));
     setSelected(new Set());
@@ -3978,7 +4081,6 @@ function App(){
     return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const credits=useCredits();
-  const ADMIN_EMAIL='2mins.facts@gmail.com';
   const plansConfig=LS.get('hm_plans_config',{newUserFlow:'manual'});
 
   // Apply theme on mount and changes
@@ -4065,15 +4167,16 @@ function AuthScreen({onLogin}) {
   async function doLogin() {
     if (!email || !pass) return showErr('Please enter your email and password.');
     setLoading(true); setErr('');
-    const u = UDB.get(email);
-    if (!u) return showErr('No account found. Please register first.');
-    if (u.status === 'suspended') return showErr('This account has been suspended.');
     try {
+      // Cache may not be populated yet (fresh page load) — fall back to a direct cloud lookup
+      let u = UDB.get(email) || (await UDB.getFresh(email));
+      if (!u) { showErr('No account found. Please register first.'); setLoading(false); return; }
+      if (u.status === 'suspended') { showErr('This account has been suspended.'); setLoading(false); return; }
       const h = await hashPwd(pass);
-      if (h !== u.pwdHash) return showErr('Wrong password. Please try again.');
+      if (h !== u.pwdHash) { showErr('Wrong password. Please try again.'); setLoading(false); return; }
       Credits.checkDaily();
       onLogin({...u, firstLoginAt: u.firstLoginAt || Date.now()});
-    } catch(e) { showErr('Login failed. Please try again.'); }
+    } catch(e) { showErr('Login failed — check your connection and try again.'); setLoading(false); }
   }
 
   // ── REGISTER STEP 1 — send code ───────────────────────────────────
@@ -4081,8 +4184,10 @@ function AuthScreen({onLogin}) {
     if (!name.trim()) return showErr('Please enter your full name.');
     const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRx.test(email)) return showErr('Please enter a valid email address.');
-    if (UDB.get(email)) return showErr('An account with this email already exists. Please login.');
     setLoading(true); setErr('');
+    // Check cache first (fast), fall back to a direct cloud lookup if cache hasn't synced yet
+    const existing = UDB.get(email) || (await UDB.getFresh(email));
+    if (existing) { showErr('An account with this email already exists. Please login.'); setLoading(false); return; }
     const code6 = String(Math.floor(100000 + Math.random() * 900000));
     setPendingCode(code6);
     // Try to send email
@@ -4109,13 +4214,14 @@ function AuthScreen({onLogin}) {
       const newUser = {
         name: name.trim(), email: email.toLowerCase().trim(),
         pwdHash: h, status: 'active', plan: 'free',
-        isAdmin: UDB.all().length === 0, // first user = admin
+        isAdmin: false, // admin status only via seed or explicit promotion, never auto-granted
         registeredAt: Date.now(), firstLoginAt: Date.now(), creditDays: 14,
       };
-      UDB.set(email, newUser);
+      const saved = await UDB.set(email, newUser);
       Credits.checkDaily();
-      onLogin(newUser);
-    } catch(e) { showErr('Registration failed. Please try again.'); }
+      onLogin(saved || newUser);
+    } catch(e) { showErr('Could not save your account — check your connection and try again.'); }
+    finally { setLoading(false); }
   }
 
   // ── FORGOT PASSWORD ────────────────────────────────────────────────
@@ -4140,12 +4246,13 @@ function AuthScreen({onLogin}) {
     setLoading(true);
     try {
       const h = await hashPwd(pass);
-      const u = UDB.get(email);
-      UDB.set(email, {...u, pwdHash: h});
+      const u = UDB.get(email) || (await UDB.getFresh(email));
+      if (!u) { showErr('Account not found.'); setLoading(false); return; }
+      await UDB.set(email, {...u, pwdHash: h});
       setLoading(false);
       setMsg('Password reset! Please login with your new password.');
       setView('login'); setPass(''); setPass2(''); setCode('');
-    } catch(e) { showErr('Reset failed. Please try again.'); }
+    } catch(e) { showErr('Reset failed — check your connection and try again.'); setLoading(false); }
   }
 
   const inp = {

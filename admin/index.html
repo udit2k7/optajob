@@ -81,6 +81,22 @@ body{background:#f1f5f9;}
 .notif-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr);}.sidebar{transform:translateX(-100%);}.main-area{margin-left:0;}}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── Button styles (restored) ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;border:none;transition:all .18s;font-family:inherit;text-decoration:none;}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.btn-primary{background:var(--teal,#3dbfa0);color:#fff;}
+.btn-primary:hover{background:#34a88c;}
+.btn-navy,.btn-lg{background:var(--navy,#1b3f7d);color:#fff;font-size:15px;padding:13px 24px;}
+.btn-navy:hover{background:#0e2550;}
+.btn-ghost{background:transparent;border:1.5px solid var(--bo,#e5e7eb);color:var(--tx,#374151);}
+.btn-ghost:hover{background:var(--s2,#f9fafb);}
+.btn-danger{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;}
+.btn-danger:hover{background:#fecaca;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px;}
+.btn-full{width:100%;}
+.btn-icon{padding:6px 10px;}
+
 </style>
 </head>
 <body>
@@ -141,7 +157,6 @@ body{background:#f1f5f9;}
       <div class="sidebar-section">Settings</div>
       <button class="nav-item" onclick="showPage('credits',this)"><span class="nav-item-icon">💳</span>Credit Days</button>
       <button class="nav-item" onclick="showPage('admins',this)"><span class="nav-item-icon">🛡</span>Admin Users</button>
-      <button class="nav-item" onclick="showPage('cloud',this)"><span class="nav-item-icon">☁️</span>Cloud Sync</button>
       <div style="margin-top:auto;padding:16px;">
         <button class="btn btn-danger btn-sm" style="width:100%;" onclick="doLogout()">Sign Out</button>
         <div style="font-size:.75rem;color:rgba(255,255,255,.25);text-align:center;margin-top:10px;">OptaJob Admin</div>
@@ -538,114 +553,6 @@ body{background:#f1f5f9;}
   </div>
 </div>
 
-<!-- CLOUD SYNC PAGE -->
-<div id="page-cloud" class="page" style="padding:24px;max-width:720px;">
-
-  <!-- Status bar -->
-  <div style="background:#e8f4fd;border:1px solid #bee3f8;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
-    <span style="font-size:22px;">☁️</span>
-    <div>
-      <div style="font-weight:700;color:#1b3f7d;font-size:13px;">Cloud Sync Status</div>
-      <div id="cloud-status" style="font-size:13px;color:#4a5568;">Not connected — enter credentials below to sync across devices</div>
-    </div>
-  </div>
-
-  <!-- Connect form -->
-  <div class="card-section" style="margin-bottom:16px;">
-    <div class="card-section-header"><h3 class="card-section-title">Connect Supabase</h3></div>
-    <div class="card-section-body">
-      <div class="form-group">
-        <label class="form-label">Project URL</label>
-        <input type="text" id="sb-url" class="form-input" placeholder="https://xxxxxxxxxxxx.supabase.co" style="font-family:monospace;font-size:13px;">
-        <div class="form-hint">From Supabase → Project Settings → API → Project URL</div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Anon (Public) Key</label>
-        <input type="password" id="sb-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-family:monospace;font-size:12px;">
-        <div class="form-hint">From Supabase → Project Settings → API → anon public key</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:4px;">
-        <button class="btn btn-primary" style="flex:2;" onclick="cloudConnect()">🔌 Connect</button>
-        <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-ghost" style="flex:1;text-align:center;text-decoration:none;">Open Supabase ↗</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sync actions -->
-  <div class="card-section" style="margin-bottom:16px;">
-    <div class="card-section-header"><h3 class="card-section-title">Sync Data</h3></div>
-    <div class="card-section-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;">
-          <div style="font-size:28px;margin-bottom:8px;">⬇️</div>
-          <div style="font-weight:700;color:#1b3f7d;margin-bottom:4px;font-size:13px;">Pull from Cloud</div>
-          <div style="font-size:11px;color:#718096;margin-bottom:12px;">Load cloud data to this device</div>
-          <button class="btn btn-primary btn-sm" style="width:100%;" onclick="cloudPull()">Pull Now</button>
-        </div>
-        <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;">
-          <div style="font-size:28px;margin-bottom:8px;">⬆️</div>
-          <div style="font-weight:700;color:#1b3f7d;margin-bottom:4px;font-size:13px;">Push to Cloud</div>
-          <div style="font-size:11px;color:#718096;margin-bottom:12px;">Save this device to cloud</div>
-          <button class="btn btn-primary btn-sm" style="width:100%;background:#2d6a4f;" onclick="cloudPush()">Push Now</button>
-        </div>
-      </div>
-      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e;">
-        ⚠️ <b>Pull</b> overwrites this device with cloud data. <b>Push</b> saves this device to cloud. When unsure, Pull first.
-      </div>
-    </div>
-  </div>
-
-  <!-- What syncs -->
-  <div class="card-section" style="margin-bottom:16px;">
-    <div class="card-section-header"><h3 class="card-section-title">What Gets Synced</h3></div>
-    <div class="card-section-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🔌 Job Search APIs</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">📧 Email APIs</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">📱 Ad Network Config</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🎫 Access Codes</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">👤 User Database</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🤖 AI Settings</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">💬 Support Queries</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🔔 Notifications</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">🛡️ Admin Users</div>
-        <div style="padding:8px 10px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;">📊 Stats &amp; Counts</div>
-      </div>
-      <div style="margin-top:10px;font-size:12px;color:#718096;line-height:1.6;">
-        🔒 Data is stored in your own Supabase project. Auto-sync activates after connecting — every setting change saves to cloud automatically.
-      </div>
-    </div>
-  </div>
-
-  <!-- SQL Setup -->
-  <div class="card-section">
-    <div class="card-section-header"><h3 class="card-section-title">First Time Setup — Run this SQL in Supabase</h3></div>
-    <div class="card-section-body">
-      <div style="background:#1a202c;border-radius:8px;padding:14px;position:relative;">
-        <pre id="sql-code" style="color:#68d391;font-size:11.5px;line-height:1.8;white-space:pre-wrap;font-family:monospace;">CREATE TABLE IF NOT EXISTS admin_config (
-  key TEXT PRIMARY KEY,
-  value JSONB,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "optajob_admin"
-  ON admin_config FOR ALL USING (true) WITH CHECK (true);</pre>
-        <button id="copy-sql-btn" onclick="copySql()" style="position:absolute;top:8px;right:8px;background:rgba(104,211,145,.2);border:1px solid rgba(104,211,145,.3);border-radius:6px;padding:4px 10px;color:#68d391;font-size:11px;cursor:pointer;">Copy SQL</button>
-      </div>
-      <div style="margin-top:10px;font-size:12px;color:#718096;line-height:1.7;">
-        <b>Steps:</b> 1. Go to supabase.com → your Optajob project &nbsp;
-        2. Left sidebar → SQL Editor → New Query &nbsp;
-        3. Paste SQL above → click Run &nbsp;
-        4. Should say "Success. No rows returned" &nbsp;
-        5. Come back here → enter URL and key → Connect → Push Now
-      </div>
-    </div>
-  </div>
-
-</div>
-
 <script src="/assets/js/main.js"></script>
 <script>
 // ══════════════════════════════════════════════════════
@@ -807,6 +714,11 @@ function showPage(id, btn) {
   var titleEl = document.getElementById('pageTitle');
   if (titleEl) titleEl.textContent = titles[id] || id;
   if (id === 'users') loadUsers();
+  if (id === 'credits') loadCreditUsersList();
+  if (id === 'admins') loadAdminsList();
+  if (id === 'notifications') loadNotifsList();
+  if (id === 'jobapis') renderJobAPIs();
+  if (id === 'emailapis') renderEmailAPIs();
   if (id === 'dashboard') loadDashboard();
 }
 
@@ -845,7 +757,7 @@ function loadUsers() {
   try {
     var udb   = JSON.parse(localStorage.getItem('hm_udb') || '{}');
     var users = Object.values(udb).sort(function(a,b){ return (b.registeredAt||0)-(a.registeredAt||0); });
-    var el = document.getElementById('usersList');
+    var el = document.getElementById('fullUsersList');
     if (!el) return;
     if (!users.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">No users yet.</div>'; return; }
     el.innerHTML = users.map(function(u){
@@ -854,8 +766,8 @@ function loadUsers() {
         +'<div style="font-size:12px;color:#6b7280;">'+u.email+' · '+(u.plan||'free')+' · '+(u.status||'active')+'</div>'
         +'<div style="font-size:11px;color:#9ca3af;">'+(u.registeredAt?new Date(u.registeredAt).toLocaleDateString('en-IN'):'')+'</div></div>'
         +'<div>'+(u.status!=='suspended'
-          ?'<button onclick="suspendUser(''+u.email+'')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Suspend</button>'
-          :'<button onclick="reinstateUser(''+u.email+'')" style="background:#f0fdf4;border:1px solid #86efac;color:#16a34a;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Reinstate</button>')
+          ?'<button onclick="suspendUser(\''+u.email+'\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Suspend</button>'
+          :'<button onclick="reinstateUser(\''+u.email+'\')" style="background:#f0fdf4;border:1px solid #86efac;color:#16a34a;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Reinstate</button>')
         +'</div></div>';
     }).join('');
   } catch(e) { console.warn('loadUsers:', e); }
@@ -906,17 +818,340 @@ async function cloudPullDash() {
   var result = await CloudSync.pull();
   if (result.ok) { setTimeout(function(){ location.reload(); }, 1500); }
 }
-function copySql() {
-  var sql = 'CREATE TABLE IF NOT EXISTS admin_config (key TEXT PRIMARY KEY, value JSONB, updated_at TIMESTAMPTZ DEFAULT NOW());\nALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "optajob_admin" ON admin_config FOR ALL USING (true) WITH CHECK (true);';
-  navigator.clipboard.writeText(sql).then(function(){
-    var btn = document.getElementById('copy-sql-btn');
-    if (btn) { btn.textContent = '\u2713 Copied!'; setTimeout(function(){ btn.textContent = 'Copy SQL'; }, 2000); }
-  }).catch(function(){ alert('Please copy the SQL manually'); });
-}
 
 // ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════
+// MODAL OPEN / CLOSE
+// ══════════════════════════════════════════════════════
+function closeModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.remove('active');
+}
+function openModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.add('active');
+}
+function openAddJobAPI() {
+  document.getElementById('newApiType').value = 'rapidapi';
+  document.getElementById('newApiName').value = '';
+  document.getElementById('newApiKey').value  = '';
+  document.getElementById('newApiLimit').value = '500';
+  updateApiPlaceholder();
+  openModal('addJobAPIModal');
+}
+function openAddEmailAPI() {
+  document.getElementById('newEmailProvider').value = 'brevo';
+  document.getElementById('newEmailName').value = '';
+  document.getElementById('newEmailKey').value  = '';
+  document.getElementById('newEmailFromName').value  = 'OptaJob';
+  document.getElementById('newEmailFromEmail').value = 'noreply@optajob.com';
+  document.getElementById('newEmailLimit').value = '300';
+  openModal('addEmailAPIModal');
+}
+
+// ══════════════════════════════════════════════════════
+// JOB API FORM HELPERS
+// ══════════════════════════════════════════════════════
+function updateApiPlaceholder() {
+  var type = document.getElementById('newApiType').value;
+  var adzunaGroup = document.getElementById('adzunaAppIdGroup');
+  if (adzunaGroup) adzunaGroup.style.display = (type === 'adzuna') ? 'block' : 'none';
+}
+function saveJobAPI() {
+  var type  = document.getElementById('newApiType').value;
+  var name  = document.getElementById('newApiName').value.trim();
+  var key   = document.getElementById('newApiKey').value.trim();
+  var key2  = document.getElementById('newApiKey2') ? document.getElementById('newApiKey2').value.trim() : '';
+  var limit = parseInt(document.getElementById('newApiLimit').value) || 500;
+  if (!key) { alert('Please enter an API key.'); return; }
+  var cfg = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[]}');
+  cfg.providers = cfg.providers || [];
+  cfg.providers.push({
+    id: 'japi_' + Date.now(),
+    type: type, name: name || (type + ' Account'),
+    key: key, key2: key2, dailyLimit: limit,
+    enabled: true, usedToday: 0, lastReset: '', addedAt: Date.now()
+  });
+  localStorage.setItem('hm_job_apis', JSON.stringify(cfg));
+  closeModal('addJobAPIModal');
+  loadDashboard();
+  renderJobAPIs();
+  alert('✅ Job API added successfully.');
+}
+
+// ══════════════════════════════════════════════════════
+// EMAIL API FORM HELPERS
+// ══════════════════════════════════════════════════════
+function prefillEmail(provider, displayName, limit) {
+  document.getElementById('newEmailProvider').value = provider;
+  document.getElementById('newEmailName').value = displayName + ' Account';
+  document.getElementById('newEmailLimit').value = limit;
+}
+function saveEmailAPI() {
+  var provider  = document.getElementById('newEmailProvider').value;
+  var name      = document.getElementById('newEmailName').value.trim();
+  var key       = document.getElementById('newEmailKey').value.trim();
+  var fromName  = document.getElementById('newEmailFromName').value.trim() || 'OptaJob';
+  var fromEmail = document.getElementById('newEmailFromEmail').value.trim() || 'noreply@optajob.com';
+  var limit     = parseInt(document.getElementById('newEmailLimit').value) || 300;
+  if (!key) { alert('Please enter an API key.'); return; }
+  var cfg = JSON.parse(localStorage.getItem('hm_email_apis') || '{"providers":[]}');
+  cfg.providers = cfg.providers || [];
+  cfg.providers.push({
+    id: 'eapi_' + Date.now(),
+    providerType: provider, name: name || (provider + ' Account'),
+    key: key, fromName: fromName, fromEmail: fromEmail, dailyLimit: limit,
+    enabled: true, usedToday: 0, lastReset: '', addedAt: Date.now()
+  });
+  localStorage.setItem('hm_email_apis', JSON.stringify(cfg));
+  closeModal('addEmailAPIModal');
+  loadDashboard();
+  renderEmailAPIs();
+  alert('✅ Email provider added successfully.');
+}
+
+// ══════════════════════════════════════════════════════
+// CREDIT DAYS (bulk assign to selected users)
+// ══════════════════════════════════════════════════════
+function loadCreditUsersList() {
+  try {
+    var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+    var users = Object.values(udb).sort(function(a,b){ return (b.registeredAt||0)-(a.registeredAt||0); });
+    var el = document.getElementById('usersList');
+    if (!el) return;
+    if (!users.length) { el.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No users registered yet.</p>'; return; }
+    el.innerHTML = users.map(function(u){
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;cursor:pointer;">'
+        + '<input type="checkbox" class="credit-user-cb" value="' + u.email + '" style="width:16px;height:16px;">'
+        + '<div style="flex:1;"><div style="font-weight:600;color:#1b3f7d;font-size:13px;">' + (u.name||'User') + '</div>'
+        + '<div style="font-size:11px;color:#6b7280;">' + u.email + ' · ' + (u.creditDays||14) + ' credit days currently</div></div>'
+        + '</label>';
+    }).join('');
+  } catch(e) { console.warn('loadCreditUsersList:', e); }
+}
+function selectAllUsers() {
+  var boxes = document.querySelectorAll('.credit-user-cb');
+  var allChecked = [...boxes].every(function(b){ return b.checked; });
+  boxes.forEach(function(b){ b.checked = !allChecked; });
+}
+function applyCreditDays() {
+  var days = parseInt(document.getElementById('newCreditDays').value);
+  var boxes = document.querySelectorAll('.credit-user-cb:checked');
+  if (!boxes.length) { alert('Please select at least one user.'); return; }
+  var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  boxes.forEach(function(b){
+    if (udb[b.value]) udb[b.value].creditDays = days;
+  });
+  localStorage.setItem('hm_udb', JSON.stringify(udb));
+  loadCreditUsersList();
+  alert('✅ Updated credit days for ' + boxes.length + ' user(s).');
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN USERS
+// ══════════════════════════════════════════════════════
+function loadAdminsList() {
+  try {
+    var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+    var admins = Object.values(udb).filter(function(u){ return u.isAdmin && u.email !== ADMIN_EMAIL; });
+    var el = document.getElementById('adminsList');
+    if (!el) return;
+    if (!admins.length) { el.innerHTML = '<p style="color:var(--grey-md);font-size:13px;">No additional admins yet.</p>'; return; }
+    el.innerHTML = admins.map(function(u){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">'
+        + '<div><div style="font-weight:600;color:#1b3f7d;font-size:13px;">' + (u.name||'Admin') + '</div>'
+        + '<div style="font-size:11px;color:#6b7280;">' + u.email + '</div></div>'
+        + '<button onclick="removeAdmin(\'' + u.email + '\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;">Remove</button>'
+        + '</div>';
+    }).join('');
+  } catch(e) { console.warn('loadAdminsList:', e); }
+}
+function addAdmin() {
+  var email = document.getElementById('newAdminEmail').value.trim().toLowerCase();
+  if (!email) { alert('Please enter an email address.'); return; }
+  var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  if (!udb[email]) { alert('No registered user found with that email. They must register in the app first.'); return; }
+  udb[email].isAdmin = true;
+  localStorage.setItem('hm_udb', JSON.stringify(udb));
+  document.getElementById('newAdminEmail').value = '';
+  loadAdminsList();
+  alert('✅ ' + email + ' is now an admin.');
+}
+function removeAdmin(email) {
+  if (!confirm('Remove admin access for ' + email + '?')) return;
+  var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
+  if (udb[email]) udb[email].isAdmin = false;
+  localStorage.setItem('hm_udb', JSON.stringify(udb));
+  loadAdminsList();
+}
+
+// ══════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ══════════════════════════════════════════════════════
+function loadNotifsList() {
+  try {
+    var notifs = JSON.parse(localStorage.getItem('hm_notifs') || '[]');
+    var el = document.getElementById('allNotifsList');
+    if (!el) return;
+    if (!notifs.length) { el.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No notifications. You\'ll be alerted when APIs hit 60% of daily quota.</p>'; return; }
+    var icons = {email_api:'📧',job_api:'🔌',user:'👤',system:'⚙️',credit:'💳',success:'🎉'};
+    el.innerHTML = notifs.map(function(n){
+      return '<div style="display:flex;gap:10px;padding:12px 14px;background:' + (n.read?'white':'#fffbeb') + ';border:1px solid ' + (n.read?'#e5e7eb':'#fde68a') + ';border-radius:10px;margin-bottom:8px;">'
+        + '<span style="font-size:18px;">' + (icons[n.type]||'🔔') + '</span>'
+        + '<div style="flex:1;"><div style="font-size:13px;color:#374151;">' + n.msg + '</div>'
+        + '<div style="font-size:10.5px;color:#9ca3af;margin-top:2px;">' + new Date(n.at).toLocaleString('en-IN') + '</div></div>'
+        + '</div>';
+    }).join('');
+  } catch(e) { console.warn('loadNotifsList:', e); }
+}
+function markAllNotifsRead() {
+  var notifs = JSON.parse(localStorage.getItem('hm_notifs') || '[]');
+  notifs.forEach(function(n){ n.read = true; });
+  localStorage.setItem('hm_notifs', JSON.stringify(notifs));
+  loadNotifsList();
+}
+
+// ══════════════════════════════════════════════════════
+// API ROTATION SETTING
+// ══════════════════════════════════════════════════════
+function updateSwitchEvery(val) {
+  var cfg = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[]}');
+  cfg.switchEvery = parseInt(val) || 10;
+  localStorage.setItem('hm_job_apis', JSON.stringify(cfg));
+}
+
+
+
+// ══════════════════════════════════════════════════════
+// JOB API LIST RENDERING
+// ══════════════════════════════════════════════════════
+function renderJobAPIs() {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[],"switchEvery":10}');
+    var providers = cfg.providers || [];
+    var today = new Date().toDateString();
+
+    var totalCap = 0, totalUsed = 0, activeCount = 0;
+    providers.forEach(function(p) {
+      totalCap += (p.dailyLimit || 0);
+      totalUsed += (p.lastReset === today ? (p.usedToday || 0) : 0);
+      if (p.enabled) activeCount++;
+    });
+    var setText = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+    setText('totalApiCap', totalCap);
+    setText('totalApiUsed', totalUsed);
+    setText('activeApis', activeCount);
+    setText('totalAllTime', providers.reduce(function(s,p){ return s + (p.usedTotal||0); }, 0));
+    setText('switchEveryDisplay', cfg.switchEvery || 10);
+    var sel = document.getElementById('switchEverySelect');
+    if (sel) sel.value = String(cfg.switchEvery || 10);
+
+    var list = document.getElementById('jobApiList');
+    if (!list) return;
+    if (!providers.length) {
+      list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:24px;">No job APIs yet. Click "+ Add API" above.</p>';
+      return;
+    }
+    list.innerHTML = providers.map(function(p) {
+      var used = (p.lastReset === today ? (p.usedToday || 0) : 0);
+      var pct = p.dailyLimit > 0 ? Math.round(used / p.dailyLimit * 100) : 0;
+      var barColor = pct > 80 ? '#ef4444' : (pct > 60 ? '#f59e0b' : '#3dbfa0');
+      return '<div style="background:white;border:1px solid ' + (p.enabled ? '#e5e7eb' : '#fca5a5') + ';border-radius:10px;padding:14px;margin-bottom:10px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'
+        + '<div><div style="font-weight:700;color:#1b3f7d;font-size:13px;">' + (p.name || p.type) + '</div>'
+        + '<div style="font-size:11px;color:#6b7280;">' + p.type + ' &middot; ' + used + '/' + p.dailyLimit + ' used today</div></div>'
+        + '<div style="display:flex;gap:6px;align-items:center;">'
+        + '<label class="toggle-switch" style="position:relative;display:inline-block;width:36px;height:20px;">'
+        + '<input type="checkbox" ' + (p.enabled ? 'checked' : '') + ' onchange="toggleJobAPI(\'' + p.id + '\')" style="opacity:0;width:0;height:0;">'
+        + '<span style="position:absolute;cursor:pointer;inset:0;background:' + (p.enabled ? '#3dbfa0' : '#cbd5e1') + ';border-radius:20px;transition:.2s;"></span>'
+        + '</label>'
+        + '<button onclick="removeJobAPI(\'' + p.id + '\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px;">Remove</button>'
+        + '</div></div>'
+        + '<div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;">'
+        + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';"></div></div>'
+        + '</div>';
+    }).join('');
+  } catch(e) { console.warn('renderJobAPIs:', e); }
+}
+function toggleJobAPI(id) {
+  var cfg = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[]}');
+  cfg.providers = (cfg.providers || []).map(function(p) { return p.id === id ? Object.assign({}, p, {enabled: !p.enabled}) : p; });
+  localStorage.setItem('hm_job_apis', JSON.stringify(cfg));
+  renderJobAPIs();
+}
+function removeJobAPI(id) {
+  if (!confirm('Remove this Job API?')) return;
+  var cfg = JSON.parse(localStorage.getItem('hm_job_apis') || '{"providers":[]}');
+  cfg.providers = (cfg.providers || []).filter(function(p) { return p.id !== id; });
+  localStorage.setItem('hm_job_apis', JSON.stringify(cfg));
+  renderJobAPIs();
+}
+
+// ══════════════════════════════════════════════════════
+// EMAIL API LIST RENDERING
+// ══════════════════════════════════════════════════════
+function renderEmailAPIs() {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('hm_email_apis') || '{"providers":[]}');
+    var providers = cfg.providers || [];
+    var today = new Date().toDateString();
+
+    var totalCap = 0, totalUsed = 0, activeCount = 0;
+    providers.forEach(function(p) {
+      totalCap += (p.dailyLimit || 0);
+      totalUsed += (p.lastReset === today ? (p.usedToday || 0) : 0);
+      if (p.enabled) activeCount++;
+    });
+    var setText = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
+    setText('emailTotalCap', totalCap);
+    setText('emailTodayUsed', totalUsed);
+    setText('emailActiveCount', activeCount);
+
+    var list = document.getElementById('emailApiList');
+    if (!list) return;
+    if (!providers.length) {
+      list.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:24px;">No email providers yet. Click "+ Add Provider" above.</p>';
+      return;
+    }
+    list.innerHTML = providers.map(function(p) {
+      var used = (p.lastReset === today ? (p.usedToday || 0) : 0);
+      var pct = p.dailyLimit > 0 ? Math.round(used / p.dailyLimit * 100) : 0;
+      var barColor = pct > 80 ? '#ef4444' : (pct > 60 ? '#f59e0b' : '#3dbfa0');
+      return '<div style="background:white;border:1px solid ' + (p.enabled ? '#e5e7eb' : '#fca5a5') + ';border-radius:10px;padding:14px;margin-bottom:10px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'
+        + '<div><div style="font-weight:700;color:#1b3f7d;font-size:13px;">' + (p.name || p.providerType) + '</div>'
+        + '<div style="font-size:11px;color:#6b7280;">' + p.providerType + ' &middot; From: ' + p.fromEmail + ' &middot; ' + used + '/' + p.dailyLimit + '/day</div></div>'
+        + '<div style="display:flex;gap:6px;align-items:center;">'
+        + '<label class="toggle-switch" style="position:relative;display:inline-block;width:36px;height:20px;">'
+        + '<input type="checkbox" ' + (p.enabled ? 'checked' : '') + ' onchange="toggleEmailAPI(\'' + p.id + '\')" style="opacity:0;width:0;height:0;">'
+        + '<span style="position:absolute;cursor:pointer;inset:0;background:' + (p.enabled ? '#3dbfa0' : '#cbd5e1') + ';border-radius:20px;transition:.2s;"></span>'
+        + '</label>'
+        + '<button onclick="removeEmailAPI(\'' + p.id + '\')" style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px;">Remove</button>'
+        + '</div></div>'
+        + '<div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;">'
+        + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';"></div></div>'
+        + '</div>';
+    }).join('');
+  } catch(e) { console.warn('renderEmailAPIs:', e); }
+}
+function toggleEmailAPI(id) {
+  var cfg = JSON.parse(localStorage.getItem('hm_email_apis') || '{"providers":[]}');
+  cfg.providers = (cfg.providers || []).map(function(p) { return p.id === id ? Object.assign({}, p, {enabled: !p.enabled}) : p; });
+  localStorage.setItem('hm_email_apis', JSON.stringify(cfg));
+  renderEmailAPIs();
+}
+function removeEmailAPI(id) {
+  if (!confirm('Remove this Email API?')) return;
+  var cfg = JSON.parse(localStorage.getItem('hm_email_apis') || '{"providers":[]}');
+  cfg.providers = (cfg.providers || []).filter(function(p) { return p.id !== id; });
+  localStorage.setItem('hm_email_apis', JSON.stringify(cfg));
+  renderEmailAPIs();
+}
+
+
 window.addEventListener('DOMContentLoaded', async function() {
   // Check session
   var session = JSON.parse(localStorage.getItem('oj_admin_session') || 'null');
