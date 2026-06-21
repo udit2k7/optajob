@@ -655,6 +655,28 @@ const _p1 = atob('VWx0aW1hdGU=');
 const _p2 = atob('QDEyMyM=');
 const ADMIN_PASS  = _p1 + _p2;
 
+// ── SUPABASE — same project as the app (embedded so user list always works) ──
+const SB_URL=atob('aHR0cHM6Ly9tbWhoaXNzdHJqa2Vzb3l3a2pwbi5zdXBhYmFzZS5jbw==');
+const SB_KEY=atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW0xdGFHaHBjM04wY21wclpYTnZlWGRyYW5CdUlpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT0RFM09EQXdOVGdzSW1WNGNDSTZNakE1TnpNMU5qQTFPSDAuZVFJQUJIeUp5QlJxcFlwQWFIQnRjdDZGS3gyRE5DT1lYb3lTVkp4TTJzOA==');
+async function sbAdmin(path,opts){
+  opts=opts||{};
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{
+    method:opts.method||'GET',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation'},
+    body:opts.body||undefined
+  });
+  if(!r.ok){throw new Error('DB error '+r.status+': '+(await r.text().catch(function(){return'';})).slice(0,150));}
+  var txt=await r.text();
+  return txt?JSON.parse(txt):null;
+}
+function _sbUserToObj(row){
+  return {
+    name:row.name, email:row.email, isAdmin:row.is_admin, plan:row.plan,
+    status:row.status, creditDays:row.credit_days,
+    registeredAt:row.registered_at?new Date(row.registered_at).getTime():0
+  };
+}
+
 // ══════════════════════════════════════════════════════
 // LOGIN / LOGOUT
 // ══════════════════════════════════════════════════════
@@ -725,14 +747,19 @@ function showPage(id, btn) {
 // ══════════════════════════════════════════════════════
 // DASHBOARD STATS
 // ══════════════════════════════════════════════════════
-function loadDashboard() {
+async function loadDashboard() {
   try {
-    var udb   = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-    var users = Object.values(udb);
-    var weekAgo = Date.now() - 7*86400000;
-    var newUsers = users.filter(function(u){ return u.registeredAt > weekAgo; }).length;
-    var el = document.getElementById('dash-users');
-    if (el) el.innerHTML = users.length + '<div style="font-size:11px;color:#3dbfa0;margin-top:2px;">+' + newUsers + ' this week</div>';
+    // User count from Supabase (cloud source of truth)
+    sbAdmin('users?select=registered_at').then(function(rows){
+      var users = rows||[];
+      var weekAgo = Date.now() - 7*86400000;
+      var newUsers = users.filter(function(u){ return u.registered_at && new Date(u.registered_at).getTime() > weekAgo; }).length;
+      var el = document.getElementById('dash-users');
+      if (el) el.innerHTML = users.length + '<div style="font-size:11px;color:#3dbfa0;margin-top:2px;">+' + newUsers + ' this week</div>';
+    }).catch(function(){
+      var el = document.getElementById('dash-users');
+      if (el) el.innerHTML = '—<div style="font-size:11px;color:#9ca3af;margin-top:2px;">cloud unavailable</div>';
+    });
     var counts = JSON.parse(localStorage.getItem('hm_outcome_counts') || '{"interviews":0,"offers":0,"searches":0}');
     var di = document.getElementById('dash-interviews'); if(di) di.textContent = counts.interviews || 0;
     var dof= document.getElementById('dash-offers');     if(dof) dof.textContent = counts.offers || 0;
@@ -753,12 +780,13 @@ function loadDashboard() {
 // ══════════════════════════════════════════════════════
 // USERS
 // ══════════════════════════════════════════════════════
-function loadUsers() {
+async function loadUsers() {
+  var el = document.getElementById('fullUsersList');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">Loading users from cloud…</div>';
   try {
-    var udb   = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-    var users = Object.values(udb).sort(function(a,b){ return (b.registeredAt||0)-(a.registeredAt||0); });
-    var el = document.getElementById('fullUsersList');
-    if (!el) return;
+    var rows = await sbAdmin('users?select=*&order=registered_at.desc');
+    var users = (rows||[]).map(_sbUserToObj);
     if (!users.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">No users yet.</div>'; return; }
     el.innerHTML = users.map(function(u){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;">'
@@ -772,13 +800,17 @@ function loadUsers() {
     }).join('');
   } catch(e) { console.warn('loadUsers:', e); }
 }
-function suspendUser(email){
-  var udb=JSON.parse(localStorage.getItem('hm_udb')||'{}');
-  if(udb[email]){udb[email].status='suspended';localStorage.setItem('hm_udb',JSON.stringify(udb));loadUsers();}
+async function suspendUser(email){
+  try{
+    await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({status:'suspended',updated_at:new Date().toISOString()})});
+    loadUsers();
+  }catch(e){alert('Could not suspend user: '+e.message);}
 }
-function reinstateUser(email){
-  var udb=JSON.parse(localStorage.getItem('hm_udb')||'{}');
-  if(udb[email]){udb[email].status='active';localStorage.setItem('hm_udb',JSON.stringify(udb));loadUsers();}
+async function reinstateUser(email){
+  try{
+    await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({status:'active',updated_at:new Date().toISOString()})});
+    loadUsers();
+  }catch(e){alert('Could not reinstate user: '+e.message);}
 }
 
 // ══════════════════════════════════════════════════════
@@ -916,12 +948,13 @@ function saveEmailAPI() {
 // ══════════════════════════════════════════════════════
 // CREDIT DAYS (bulk assign to selected users)
 // ══════════════════════════════════════════════════════
-function loadCreditUsersList() {
+async function loadCreditUsersList() {
+  var el = document.getElementById('usersList');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:24px;">Loading…</p>';
   try {
-    var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-    var users = Object.values(udb).sort(function(a,b){ return (b.registeredAt||0)-(a.registeredAt||0); });
-    var el = document.getElementById('usersList');
-    if (!el) return;
+    var rows = await sbAdmin('users?select=*&order=registered_at.desc');
+    var users = (rows||[]).map(_sbUserToObj);
     if (!users.length) { el.innerHTML = '<p style="color:var(--grey-md);text-align:center;padding:32px;">No users registered yet.</p>'; return; }
     el.innerHTML = users.map(function(u){
       return '<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;cursor:pointer;">'
@@ -937,28 +970,28 @@ function selectAllUsers() {
   var allChecked = [...boxes].every(function(b){ return b.checked; });
   boxes.forEach(function(b){ b.checked = !allChecked; });
 }
-function applyCreditDays() {
+async function applyCreditDays() {
   var days = parseInt(document.getElementById('newCreditDays').value);
   var boxes = document.querySelectorAll('.credit-user-cb:checked');
   if (!boxes.length) { alert('Please select at least one user.'); return; }
-  var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  boxes.forEach(function(b){
-    if (udb[b.value]) udb[b.value].creditDays = days;
-  });
-  localStorage.setItem('hm_udb', JSON.stringify(udb));
-  loadCreditUsersList();
-  alert('✅ Updated credit days for ' + boxes.length + ' user(s).');
+  try {
+    for (var i=0;i<boxes.length;i++){
+      await sbAdmin('users?email=eq.'+encodeURIComponent(boxes[i].value),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({credit_days:days,updated_at:new Date().toISOString()})});
+    }
+    loadCreditUsersList();
+    alert('✅ Updated credit days for ' + boxes.length + ' user(s).');
+  } catch(e) { alert('Could not update credit days: ' + e.message); }
 }
 
 // ══════════════════════════════════════════════════════
 // ADMIN USERS
 // ══════════════════════════════════════════════════════
-function loadAdminsList() {
+async function loadAdminsList() {
+  var el = document.getElementById('adminsList');
+  if (!el) return;
   try {
-    var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-    var admins = Object.values(udb).filter(function(u){ return u.isAdmin && u.email !== ADMIN_EMAIL; });
-    var el = document.getElementById('adminsList');
-    if (!el) return;
+    var rows = await sbAdmin('users?select=*&is_admin=eq.true');
+    var admins = (rows||[]).map(_sbUserToObj).filter(function(u){ return u.email !== ADMIN_EMAIL; });
     if (!admins.length) { el.innerHTML = '<p style="color:var(--grey-md);font-size:13px;">No additional admins yet.</p>'; return; }
     el.innerHTML = admins.map(function(u){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">'
@@ -969,23 +1002,24 @@ function loadAdminsList() {
     }).join('');
   } catch(e) { console.warn('loadAdminsList:', e); }
 }
-function addAdmin() {
+async function addAdmin() {
   var email = document.getElementById('newAdminEmail').value.trim().toLowerCase();
   if (!email) { alert('Please enter an email address.'); return; }
-  var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  if (!udb[email]) { alert('No registered user found with that email. They must register in the app first.'); return; }
-  udb[email].isAdmin = true;
-  localStorage.setItem('hm_udb', JSON.stringify(udb));
-  document.getElementById('newAdminEmail').value = '';
-  loadAdminsList();
-  alert('✅ ' + email + ' is now an admin.');
+  try {
+    var rows = await sbAdmin('users?email=eq.'+encodeURIComponent(email)+'&select=email');
+    if (!rows || !rows.length) { alert('No registered user found with that email. They must register in the app first.'); return; }
+    await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({is_admin:true,updated_at:new Date().toISOString()})});
+    document.getElementById('newAdminEmail').value = '';
+    loadAdminsList();
+    alert('✅ ' + email + ' is now an admin. It takes effect on their next login.');
+  } catch(e) { alert('Could not promote admin: ' + e.message); }
 }
-function removeAdmin(email) {
+async function removeAdmin(email) {
   if (!confirm('Remove admin access for ' + email + '?')) return;
-  var udb = JSON.parse(localStorage.getItem('hm_udb') || '{}');
-  if (udb[email]) udb[email].isAdmin = false;
-  localStorage.setItem('hm_udb', JSON.stringify(udb));
-  loadAdminsList();
+  try {
+    await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({is_admin:false,updated_at:new Date().toISOString()})});
+    loadAdminsList();
+  } catch(e) { alert('Could not remove admin: ' + e.message); }
 }
 
 // ══════════════════════════════════════════════════════
