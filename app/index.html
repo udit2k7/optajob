@@ -1844,12 +1844,53 @@ function HomeScreen({user,onTabChange}){
 // ── SEARCH SCREEN ─────────────────────────────────────────────────────
 const LOAD_STEPS=['Reading your profile…','Searching LinkedIn & Naukri…','Searching Indeed & Glassdoor…','Calculating match scores…','Ranking results…'];
 const CITIES=['Bangalore','Mumbai','Delhi NCR','Hyderabad','Pune','Chennai','Remote','Worldwide'];
+
+// ── CITY REGION MAPPING — suggest nearby major cities based on resume ──
+const CITY_REGIONS={
+  south:['Bangalore','Hyderabad','Chennai','Pune','Kochi','Coimbatore','Mumbai'],
+  west:['Mumbai','Pune','Ahmedabad','Surat','Nagpur','Indore','Bangalore'],
+  north:['Delhi NCR','Gurgaon','Noida','Chandigarh','Jaipur','Lucknow','Pune'],
+  east:['Kolkata','Bhubaneswar','Guwahati','Patna','Ranchi','Delhi NCR','Bangalore'],
+};
+const CITY_TO_REGION={
+  bangalore:'south',bengaluru:'south',hyderabad:'south',chennai:'south',kochi:'south',cochin:'south',coimbatore:'south',mysore:'south',madurai:'south',trivandrum:'south',
+  mumbai:'west',pune:'west',ahmedabad:'west',surat:'west',nagpur:'west',indore:'west',nashik:'west',vadodara:'west',rajkot:'west',goa:'west',
+  delhi:'north',gurgaon:'north',gurugram:'north',noida:'north',chandigarh:'north',jaipur:'north',lucknow:'north',kanpur:'north',ludhiana:'north',agra:'north',
+  kolkata:'east',calcutta:'east',bhubaneswar:'east',guwahati:'east',patna:'east',ranchi:'east',siliguri:'east',
+};
+function suggestCitiesFromResume(text){
+  const t=(text||'').toLowerCase();
+  let region=null;
+  for(const city in CITY_TO_REGION){
+    if(t.includes(city)){ region=CITY_TO_REGION[city]; break; }
+  }
+  if(!region) return ['Bangalore','Mumbai','Delhi NCR','Hyderabad','Pune','Chennai','Remote'];
+  return [...CITY_REGIONS[region],'Remote'];
+}
+
+// ── Extract likely job title + skills from resume text ──
+const _SKILL_BANK=['javascript','python','java','react','node','sql','aws','azure','docker','kubernetes','html','css','typescript','angular','vue','php','ruby','golang','rust','swift','kotlin','flutter','django','spring','excel','tableau','powerbi','salesforce','sap','figma','photoshop','illustrator','seo','marketing','sales','accounting','finance','hr','recruitment','content','copywriting','data analysis','machine learning','ai','devops','testing','qa','android','ios','c++','c#','.net','spring boot','mongodb','postgresql','mysql','redis','kafka','graphql'];
+function extractResumeSearch(text){
+  const t=(text||'').toLowerCase();
+  // Title: look for common title patterns in first 600 chars
+  const head=t.slice(0,600);
+  const titlePatterns=['software engineer','senior software engineer','full stack developer','frontend developer','backend developer','data scientist','data analyst','product manager','project manager','business analyst','marketing manager','sales executive','accountant','hr manager','ui designer','ux designer','graphic designer','devops engineer','qa engineer','content writer','digital marketing','web developer','mobile developer','android developer','ios developer'];
+  let title='';
+  for(const p of titlePatterns){ if(head.includes(p)){ title=p.replace(/\b\w/g,c=>c.toUpperCase()); break; } }
+  // Skills: match against skill bank
+  const skills=_SKILL_BANK.filter(s=>t.includes(s)).slice(0,6);
+  if(!title && skills.length) title=skills.slice(0,2).map(s=>s.replace(/\b\w/g,c=>c.toUpperCase())).join(' ')+' Developer';
+  const query=(title+(skills.length?' '+skills.slice(0,3).join(' '):'')).trim()||'jobs';
+  return {title,skills,query,cities:suggestCitiesFromResume(text)};
+}
 const TYPES=['Full-time','Part-time','Remote','Hybrid','Contract'];
 
 function SearchScreen({user}){
   const[query,setQuery]=useState('');
   const[city,setCity]=useState('');
   const[selCity,setSelCity]=useState([]);
+  const[suggestedCities,setSuggestedCities]=useState([]);
+  const[fromResume,setFromResume]=useState(false);
   const[selType,setSelType]=useState([]);
   const[showFilters,setShowFilters]=useState(false);
   const[jobs,setJobs]=useState(null);
@@ -1858,6 +1899,22 @@ function SearchScreen({user}){
   const[loadStep,setLoadStep]=useState(0);
   const[err,setErr]=useState('');
   const[savedJobs,setSavedJobs]=useState(()=>LS.get('hm_saved_jobs',[]));
+
+  // If user arrived via "Find Jobs from Resume", auto-fill from the resume
+  useEffect(()=>{
+    const rs=window._ojResumeSearch;
+    if(rs){
+      if(rs.query)setQuery(rs.query);
+      if(rs.cities&&rs.cities.length){
+        setSuggestedCities(rs.cities);
+        setSelCity(rs.cities.slice(0,1)); // pre-select the top city
+      }
+      setSortBy('match'); // sort by match by default when coming from resume
+      setFromResume(true);
+      setShowFilters(true); // open filters so suggestions are visible
+      window._ojResumeSearch=null; // consume once
+    }
+  },[]);
   const[salary,setSalary]=useState('');
   const[sortBy,setSortBy]=useState('match'); // match|date|salary
   const[dateFilter,setDateFilter]=useState('any'); // any|7|30
@@ -1992,9 +2049,9 @@ Return ONLY the JSON array. No text before or after.`;
       {showFilters&&(
         <div style={{padding:'12px 20px',background:'var(--s2)',borderBottom:'1px solid var(--bo)'}}>
           <div style={{marginBottom:10}}>
-            <div className="label" style={{marginBottom:6}}>Cities</div>
+            <div className="label" style={{marginBottom:6}}>Cities{fromResume&&suggestedCities.length>0&&<span style={{fontWeight:400,color:'var(--ac)',fontSize:11}}> · suggested from your resume</span>}</div>
             <div className="chips">
-              {CITIES.map(c=><button key={c} className={`chip ${selCity.includes(c)?'on':''}`} onClick={()=>tog(selCity,setSelCity,c)}>{c}</button>)}
+              {(suggestedCities.length>0?[...suggestedCities,...CITIES.filter(c=>!suggestedCities.includes(c))]:CITIES).map(c=><button key={c} className={`chip ${selCity.includes(c)?'on':''}`} onClick={()=>tog(selCity,setSelCity,c)}>{c}</button>)}
             </div>
             <input className="input" style={{marginTop:8}} value={city} onChange={e=>setCity(e.target.value)} placeholder="Add another city…"/>
           </div>
@@ -2184,11 +2241,10 @@ function ApplicationsScreen(){
   );
 }
 
-function ResumeScreen(){
+function ResumeScreen({onTabChange}){
   const[resumes,setResumes]=useState(()=>LS.get('hm_resumes',[]));
-  const[atsJob,setAtsJob]=useState('');
-  const[atsResult,setAtsResult]=useState(null);
-  const[atsLoading,setAtsLoading]=useState(false);
+  const[editingId,setEditingId]=useState(null);
+  const[editText,setEditText]=useState('');
   const fileRef=useRef(null);
 
   const[uploadingMsg,setUploadingMsg]=useState('');
@@ -2229,18 +2285,7 @@ function ResumeScreen(){
 
   const del=id=>{const u=resumes.filter(r=>r.id!==id);setResumes(u);LS.set('hm_resumes',u);};
 
-  const checkAts=async()=>{
-    if(!resumes.length||!atsJob.trim())return;
-    setAtsLoading(true);setAtsResult(null);
-    const resume=resumes[0].content;
-    const jl=resume.toLowerCase(),ql=atsJob.toLowerCase();
-    const words=[...new Set((ql.match(/\b[a-z]{3,}\b/g)||[]).filter(w=>!['the','and','or','for','with','that','this','are','was','have'].includes(w)))];
-    const matched=words.filter(w=>jl.includes(w));
-    const missing=words.filter(w=>!jl.includes(w)).slice(0,8);
-    setAtsResult({score:Math.min(Math.round((matched.length/Math.max(words.length,1))*100),97),matched:matched.slice(0,10),missing});
-    setAtsLoading(false);
-  };
-
+  
   return(
     <div className="screen">
       <div className="topbar">
@@ -2277,58 +2322,35 @@ function ResumeScreen(){
       ):(
         <div style={{padding:'0 20px'}}>
           {resumes.map((r,i)=>(
-            <div key={r.id} className="rslot">
+            <React.Fragment key={r.id}>
+            <div className="rslot">
               <div className="rslot-icon">📄</div>
               <div style={{flex:1}}>
                 <div className="rslot-name">{r.name}</div>
                 <div className="rslot-meta">{r.wordCount} words · {i===0?'Default · ':''}Saved {new Date(r.savedAt).toLocaleDateString('en-IN')}</div>
               </div>
               <div style={{display:'flex',gap:6}}>
+                <button className="btn btn-primary btn-sm" onClick={()=>{window._ojResumeSearch=extractResumeSearch(r.content);onTabChange&&onTabChange('search');}} title="Find matching jobs" style={{whiteSpace:'nowrap'}}>🔍 Find Jobs</button>
+                <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>{setEditingId(editingId===r.id?null:r.id);setEditText(r.content);}} title="Edit text">✏️</button>
                 <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>navigator.clipboard.writeText(r.content)} title="Copy"><Icon.Copy/></button>
                 <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>{const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(r.content);a.download=r.name+'.txt';a.click();}} title="Download"><Icon.Download/></button>
                 <button className="btn btn-danger btn-sm btn-icon" onClick={()=>del(r.id)} title="Delete"><Icon.Trash/></button>
               </div>
             </div>
+            {editingId===r.id&&(
+              <div style={{padding:'0 4px 12px'}}>
+                <textarea className="input" value={editText} onChange={e=>setEditText(e.target.value)} style={{minHeight:200,resize:'vertical',fontSize:13,lineHeight:1.5,width:'100%'}}/>
+                <div style={{display:'flex',gap:8,marginTop:8}}>
+                  <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>setEditingId(null)}>Cancel</button>
+                  <button className="btn btn-primary btn-sm" style={{flex:2}} onClick={()=>{const u=resumes.map(x=>x.id===r.id?{...x,content:editText,wordCount:editText.split(/\s+/).filter(Boolean).length}:x);setResumes(u);LS.set('hm_resumes',u);setEditingId(null);}}>Save Changes</button>
+                </div>
+              </div>
+            )}
+            </React.Fragment>
           ))}
         </div>
       )}
 
-      {/* ATS Checker */}
-      {resumes.length>0&&(
-        <>
-          <div className="sh" style={{marginTop:8}}><span className="sh-title">ATS Score Checker</span></div>
-          <div style={{padding:'0 20px'}}>
-            <textarea className="input" value={atsJob} onChange={e=>setAtsJob(e.target.value)} placeholder="Paste a job description to check how well your resume matches it…" style={{minHeight:100,resize:'vertical',marginBottom:10}}/>
-            <button className="btn btn-primary btn-full" onClick={checkAts} disabled={atsLoading||!atsJob.trim()||!resumes.length}>
-              {atsLoading?<><AnimatedLoader size="sm"/> Checking…</>:'Check ATS Score'}
-            </button>
-            {atsResult&&(
-              <div style={{marginTop:14,background:'var(--s)',border:'1px solid var(--bo)',borderRadius:'var(--r2)',padding:'16px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:14}}>
-                  <div style={{textAlign:'center'}}>
-                    <div style={{fontSize:32,fontWeight:700,fontFamily:'Syne,sans-serif',color:atsResult.score>=75?'var(--ok)':atsResult.score>=50?'var(--wa)':'var(--er)'}}>{atsResult.score}%</div>
-                    <div style={{fontSize:10,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--mu)'}}>ATS Match</div>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{height:6,background:'var(--s2)',borderRadius:3,overflow:'hidden',marginBottom:8}}>
-                      <div style={{height:'100%',borderRadius:3,background:`linear-gradient(90deg,${atsResult.score>=75?'var(--ok)':atsResult.score>=50?'var(--wa)':'var(--er)'},var(--ac))`,width:`${atsResult.score}%`,transition:'width 1s ease'}}/>
-                    </div>
-                    <div style={{fontSize:12,color:'var(--mu)'}}>Using: {resumes[0].name}</div>
-                  </div>
-                </div>
-                {atsResult.matched.length>0&&<div style={{marginBottom:10}}>
-                  <div className="label" style={{marginBottom:6}}>Keywords matched ✓</div>
-                  <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{atsResult.matched.map(k=><span key={k} style={{padding:'3px 9px',borderRadius:4,background:'var(--okp)',color:'var(--ok)',fontSize:11,fontWeight:600}}>{k}</span>)}</div>
-                </div>}
-                {atsResult.missing.length>0&&<div>
-                  <div className="label" style={{marginBottom:6}}>Keywords to add ✗</div>
-                  <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{atsResult.missing.map(k=><span key={k} style={{padding:'3px 9px',borderRadius:4,background:'var(--s2)',color:'var(--mu)',fontSize:11,fontWeight:600,border:'1px solid var(--bo)'}}>{k}</span>)}</div>
-                </div>}
-              </div>
-            )}
-          </div>
-        </>
-      )}
       <div style={{height:20}}/>
     </div>
   );
@@ -4240,7 +4262,7 @@ function App(){
           {tab==='home'&&<HomeScreen user={user} onTabChange={setTab}/>}
           {tab==='search'&&<SearchScreen user={user}/>}
           {tab==='applications'&&<ApplicationsScreen/>}
-          {tab==='resume'&&<ResumeScreen/>}
+          {tab==='resume'&&<ResumeScreen onTabChange={setTab}/>}
           {tab==='profile'&&(
             <ProfileScreen user={user} onUpdate={updateUser} onLogout={handleLogout}
               theme={theme} setTheme={setTheme} isDark={isDark} setIsDark={setIsDark}/>
