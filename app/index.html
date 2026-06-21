@@ -462,16 +462,30 @@ const DAILY_FREE_DEFAULT_DAYS = 14; // free credits given for first N days
 
 // ── CONTACT FINDER VENDORS ────────────────────────────────────────────
 const CONTACT_VENDORS = {
-  hunter:       { name:'Hunter.io',       free:'25/month',  link:'https://hunter.io/api',          keyPh:'Your Hunter.io key',  note:'Best known · Domain search · Email verify',    keyStore:'hm_ck_hunter' },
-  apollo:       { name:'Apollo.io',        free:'50/month',  link:'https://developer.apollo.io',    keyPh:'Your Apollo API key', note:'Largest database · Sales intelligence',         keyStore:'hm_ck_apollo' },
-  snov:         { name:'Snov.io',          free:'50/month',  link:'https://snov.io/api',            keyPh:'Your Snov.io key',    note:'LinkedIn finder + domain search',               keyStore:'hm_ck_snov' },
-  skrapp:       { name:'Skrapp.io',        free:'100/month', link:'https://skrapp.io',              keyPh:'Your Skrapp key',     note:'Best free volume · 100/month',                  keyStore:'hm_ck_skrapp' },
-  anymailfinder:{ name:'Anymail Finder',   free:'90/month',  link:'https://anymailfinder.com',      keyPh:'Your key',            note:'High accuracy · 90 free/month',                 keyStore:'hm_ck_anymail' },
-  voilanorbert: { name:'VoilaNorbert',     free:'50/month',  link:'https://voilanorbert.com',       keyPh:'Your key',            note:'Fast + clean API',                              keyStore:'hm_ck_norbert' },
-  findthat:     { name:'Findthat.email',   free:'50/month',  link:'https://findthat.email',         keyPh:'Your API key',        note:'Simple REST API',                               keyStore:'hm_ck_findthat' },
-  lusha:        { name:'Lusha',            free:'5/month',   link:'https://www.lusha.com/api',      keyPh:'Your Lusha key',      note:'Very accurate · Phone numbers too',             keyStore:'hm_ck_lusha' },
-  custom:       { name:'Custom Vendor',    free:'varies',    link:'',                               keyPh:'API Key',             note:'Any REST API that returns email addresses',      keyStore:'hm_ck_custom' },
+  hunter:       { name:'Hunter.io',       free:'25/month',  monthlyLimit:25,  signupUrl:'https://hunter.io/users/sign_up', link:'https://hunter.io/api-keys',          keyPh:'Your Hunter.io key',  note:'Best known · Domain search · Email verify',    keyStore:'hm_ck_hunter',  usageKey:'hm_use_hunter' },
+  apollo:       { name:'Apollo.io',        free:'50/month',  monthlyLimit:50,  signupUrl:'https://www.apollo.io/sign-up',   link:'https://app.apollo.io/#/settings/integrations/api', keyPh:'Your Apollo Master API key', note:'Largest database · Email reveal may need a paid Apollo plan', keyStore:'hm_ck_apollo',  usageKey:'hm_use_apollo' },
+  snov:         { name:'Snov.io',          free:'50/month',  monthlyLimit:50,  signupUrl:'https://snov.io/pricing',         link:'https://app.snov.io/account',          keyPh:'Client ID:Client Secret (paste both, separated by a colon)', note:'⚠️ Needs Client ID AND Secret — see note below', keyStore:'hm_ck_snov',    usageKey:'hm_use_snov' },
+  skrapp:       { name:'Skrapp.io',        free:'100/month', monthlyLimit:100, signupUrl:'https://skrapp.io/register',      link:'https://skrapp.io',                    keyPh:'Your Skrapp key',     note:'⚠️ Verifies a KNOWN name only — not auto-discovery', keyStore:'hm_ck_skrapp',  usageKey:'hm_use_skrapp' },
+  anymailfinder:{ name:'Anymail Finder',   free:'90/month',  monthlyLimit:90,  signupUrl:'https://anymailfinder.com/users/sign_up', link:'https://anymailfinder.com/email-finder-api', keyPh:'Your key', note:'✅ Real discovery · finds unknown contacts at a domain', keyStore:'hm_ck_anymail', usageKey:'hm_use_anymail' },
+  voilanorbert: { name:'VoilaNorbert',     free:'50/month',  monthlyLimit:50,  signupUrl:'https://voilanorbert.com/sign_up', link:'https://voilanorbert.com',           keyPh:'Your key',            note:'⚠️ Verifies a KNOWN name only — not auto-discovery', keyStore:'hm_ck_norbert', usageKey:'hm_use_norbert' },
+  findthat:     { name:'Findthat.email',   free:'50/month',  monthlyLimit:50,  signupUrl:'https://findthat.email/users/sign_up', link:'https://findthat.email',        keyPh:'Your API key',        note:'⚠️ Could not verify current API docs — key stored, not auto-wired yet', keyStore:'hm_ck_findthat',usageKey:'hm_use_findthat' },
+  lusha:        { name:'Lusha',            free:'5/month',   monthlyLimit:5,   signupUrl:'https://www.lusha.com/signup',    link:'https://www.lusha.com/api',            keyPh:'Your Lusha key',      note:'⚠️ Discovery needs a paid plan · free tier verifies known names only', keyStore:'hm_ck_lusha',   usageKey:'hm_use_lusha' },
+  custom:       { name:'Custom Vendor',    free:'varies',    monthlyLimit:0,   signupUrl:'',                                link:'',                                     keyPh:'API Key',             note:'Any REST API that returns email addresses',      keyStore:'hm_ck_custom',  usageKey:'hm_use_custom' },
 };
+
+// Track + read vendor usage this calendar month (resets automatically when month changes)
+function _vendorUsage(usageKey){
+  const rec=LS.get(usageKey,{month:'',count:0});
+  const curMonth=new Date().toISOString().slice(0,7);
+  if(rec.month!==curMonth) return 0;
+  return rec.count||0;
+}
+function vendorIncrementUsage(usageKey){
+  const curMonth=new Date().toISOString().slice(0,7);
+  const rec=LS.get(usageKey,{month:curMonth,count:0});
+  const count=(rec.month===curMonth?rec.count:0)+1;
+  LS.set(usageKey,{month:curMonth,count});
+}
 
 // Get all configured (non-empty) contact vendor keys
 const getConfiguredContactVendors = () =>
@@ -569,10 +583,13 @@ async function callClaude(prompt,system='',useSearch=false){
 
 // ── USER'S OWN AI (uses their personal API key — admin must enable first) ──
 const AI_PROVIDERS = {
-  claude:  { name:'OptaJob AI (Claude Engine)', sub:'Best for web search & contacts', free:'Pay-as-you-go · ~₹0.50/search', keyLabel:'OptaJob AI API Key', keyPh:'sk-ant-api03-…', link:'https://console.optajob.com/keys', keyStore:'hm_claude_key' },
-  gemini:  { name:'Gemini (Google)',    sub:'Very affordable, fast responses', free:'Free tier: 60 req/min',         keyLabel:'Gemini API Key',    keyPh:'AIzaSy…',         link:'https://aistudio.google.com/app/apikey', keyStore:'hm_gemini_key' },
-  openai:  { name:'GPT-4o-mini',        sub:'Reliable, widely tested',         free:'Pay-as-you-go · ~₹0.20/search', keyLabel:'OpenAI API Key',    keyPh:'sk-proj-…',       link:'https://platform.openai.com/api-keys', keyStore:'hm_openai_key' },
+  groq:    { name:'Groq',               sub:'⭐ Recommended — fastest, very generous free tier', free:'Free: 14,400 requests/day', freeTier:true,  keyLabel:'Groq API Key',    keyPh:'gsk_…',     signupUrl:'https://console.groq.com/login', link:'https://console.groq.com/keys', keyStore:'hm_groq_key', usageKey:'hm_usage_groq', dailyLimit:14400 },
+  gemini:  { name:'Gemini (Google)',    sub:'Reliable, good free tier',         free:'Free: 60 requests/min',      freeTier:true,  keyLabel:'Gemini API Key',  keyPh:'AIzaSy…',   signupUrl:'https://aistudio.google.com', link:'https://aistudio.google.com/app/apikey', keyStore:'hm_gemini_key', usageKey:'hm_usage_gemini', dailyLimit:1500 },
+  claude:  { name:'OptaJob AI (Claude Engine)', sub:'Highest quality, best for web search', free:'Paid · ~₹0.50/search', freeTier:false, keyLabel:'OptaJob AI API Key', keyPh:'sk-ant-api03-…', signupUrl:'https://console.anthropic.com', link:'https://console.anthropic.com/settings/keys', keyStore:'hm_claude_key', usageKey:'hm_usage_claude' },
+  openai:  { name:'GPT-4o-mini',        sub:'Reliable, widely tested',          free:'Paid · ~₹0.20/search', freeTier:false, keyLabel:'OpenAI API Key',  keyPh:'sk-proj-…', signupUrl:'https://platform.openai.com/signup', link:'https://platform.openai.com/api-keys', keyStore:'hm_openai_key', usageKey:'hm_usage_openai' },
 };
+
+
 
 function isAIEnabled(userEmail){
   const global=LS.get('hm_ai_global',false);
@@ -583,12 +600,12 @@ function isAIEnabled(userEmail){
 
 async function callUserAI(prompt,userEmail,useSearch=false){
   if(!isAIEnabled(userEmail))throw new Error('AI features not enabled for your account. Contact admin.');
-  const provider=LS.get('hm_ai_provider','ai');
+  const provider=LS.get('hm_ai_provider','claude');
   const cfg=AI_PROVIDERS[provider];
   const key=LS.get(cfg?.keyStore||'hm_claude_key','');
   if(!key)throw new Error(`Add your ${cfg?.name||'AI'} API key in Profile → AI Settings to use this feature.`);
 
-  if(provider==='ai'){
+  if(provider==='claude'){
     const body={model:'claude-haiku-4-5-20251001',max_tokens:3000,messages:[{role:'user',content:prompt}]};
     if(useSearch)body.tools=[{type:'web_search_20250305',name:'web_search'}];
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify(body)});
@@ -596,6 +613,14 @@ async function callUserAI(prompt,userEmail,useSearch=false){
     const d=await r.json();
     if(d.error)throw new Error(d.error.message);
     return(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  }
+
+  if(provider==='groq'){
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:3000,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Groq error ${r.status}`);}
+    const d=await r.json();
+    if(d.error)throw new Error(d.error.message);
+    return d.choices?.[0]?.message?.content||'';
   }
 
   if(provider==='gemini'){
@@ -621,11 +646,17 @@ async function callUserAI(prompt,userEmail,useSearch=false){
 async function testUserAIKey(provider,key){
   const cfg=AI_PROVIDERS[provider];
   try{
-    if(provider==='ai'){
+    if(provider==='claude'){
       const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:5,messages:[{role:'user',content:'hi'}]})});
       const d=await r.json();
       if(d.error)throw new Error(d.error.message);
       return{ok:true,msg:'AI Engine connected ✓'};
+    }
+    if(provider==='groq'){
+      const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:5,messages:[{role:'user',content:'hi'}]})});
+      const d=await r.json();
+      if(d.error)throw new Error(d.error.message);
+      return{ok:true,msg:'Groq connected ✓'};
     }
     if(provider==='gemini'){
       const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'hi'}]}],generationConfig:{maxOutputTokens:5}})});
@@ -1095,6 +1126,199 @@ async function extractDocxText(file){
   return result.value||'';
 }
 
+// ── REAL HR CONTACT LOOKUP — Hunter.io Domain Search (used when user has a key) ──
+async function hunterDomainSearch(companyDomain,apiKey){
+  const url='https://api.hunter.io/v2/domain-search?domain='+encodeURIComponent(companyDomain)+'&api_key='+encodeURIComponent(apiKey)+'&limit=8';
+  const r=await fetch(url);
+  if(!r.ok) throw new Error('Hunter.io error '+r.status);
+  const data=await r.json();
+  const emails=(data.data&&data.data.emails)||[];
+  if(!emails.length) return null;
+  const contacts=emails.map(e=>({
+    name:[e.first_name,e.last_name].filter(Boolean).join(' ')||'Unknown',
+    role:e.position||'Employee',
+    priority:/hr|talent|recruit|people/i.test(e.position||'')?'high':/ceo|founder|director|head/i.test(e.position||'')?'medium':'low',
+    email:e.value,
+    emailConfidence:e.confidence>=80?'high':e.confidence>=50?'medium':'low',
+    linkedin:e.linkedin||'',
+    whyContact:e.position?('Works as '+e.position):'Found via company domain search',
+    source:'Hunter.io (verified)'
+  }));
+  contacts.sort((a,b)=>({high:0,medium:1,low:2}[a.priority]-{high:0,medium:1,low:2}[b.priority]));
+  return{contacts,emailPattern:(data.data&&data.data.pattern)||'',domain:companyDomain,careersEmail:'careers@'+companyDomain,tip:'Verified via Hunter.io — these are real, confirmed email addresses.',_real:true};
+}
+// ── REAL LOOKUP — Apollo.io (2-step: search, then enrich each match) ──
+async function apolloPeopleSearch(companyDomain,apiKey){
+  const searchRes=await fetch('https://api.apollo.io/api/v1/mixed_people/api_search',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Api-Key':apiKey},
+    body:JSON.stringify({
+      q_organization_domains:companyDomain,
+      person_titles:['CEO','Founder','HR Manager','Talent Acquisition','Recruiter','Head of HR','Hiring Manager','Director'],
+      per_page:8
+    })
+  });
+  if(!searchRes.ok) throw new Error('Apollo error '+searchRes.status);
+  const searchData=await searchRes.json();
+  const people=searchData.people||[];
+  if(!people.length) return null;
+
+  const contacts=[];
+  for(const p of people.slice(0,5)){
+    try{
+      const er=await fetch('https://api.apollo.io/api/v1/people/match',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Api-Key':apiKey},
+        body:JSON.stringify({id:p.id,reveal_personal_emails:false})
+      });
+      if(!er.ok) continue;
+      const ed=await er.json();
+      const person=ed.person;
+      if(person&&person.email){
+        contacts.push({
+          name:person.name||[p.first_name,p.last_name].filter(Boolean).join(' ')||'Unknown',
+          role:person.title||p.title||'Employee',
+          priority:/hr|talent|recruit|people/i.test(person.title||'')?'high':/ceo|founder|director|head/i.test(person.title||'')?'medium':'low',
+          email:person.email,
+          emailConfidence:person.email_status==='verified'?'high':'medium',
+          linkedin:person.linkedin_url||'',
+          whyContact:person.title?('Works as '+person.title):'Found via Apollo people search',
+          source:'Apollo.io (verified)'
+        });
+      }
+    }catch(e){ /* this one match failed, try next person */ }
+  }
+  if(!contacts.length) return null; // search worked but no emails revealed — often needs a paid Apollo plan
+  contacts.sort((a,b)=>({high:0,medium:1,low:2}[a.priority]-{high:0,medium:1,low:2}[b.priority]));
+  return{contacts,emailPattern:'',domain:companyDomain,careersEmail:'careers@'+companyDomain,tip:'Verified via Apollo.io — real enriched contacts.',_real:true};
+}
+
+// ── REAL LOOKUP — Snov.io (needs client_id:client_secret in the key field, async search) ──
+async function snovGetAccessToken(clientId,clientSecret){
+  const r=await fetch('https://api.snov.io/v1/oauth/access_token',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({grant_type:'client_credentials',client_id:clientId,client_secret:clientSecret})
+  });
+  if(!r.ok) throw new Error('Snov.io auth error '+r.status);
+  const d=await r.json();
+  if(!d.access_token) throw new Error('Snov.io authentication failed — check your Client ID and Secret');
+  return d.access_token;
+}
+async function snovDomainSearch(companyDomain,combinedKey){
+  const parts=(combinedKey||'').split(':');
+  if(parts.length<2) throw new Error('Snov.io needs Client ID and Client Secret, separated by a colon (id:secret)');
+  const[clientId,clientSecret]=parts;
+  const token=await snovGetAccessToken(clientId.trim(),clientSecret.trim());
+
+  const startRes=await fetch('https://api.snov.io/v2/domain-emails-with-info/start',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({domain:companyDomain,type:'all',limit:10})
+  });
+  if(!startRes.ok) throw new Error('Snov.io search error '+startRes.status);
+  const startData=await startRes.json();
+  const taskHash=(startData.data&&startData.data.task_hash)||startData.task_hash;
+  if(!taskHash) throw new Error('Snov.io did not return a search task');
+
+  let resultData=null;
+  for(let i=0;i<6;i++){
+    await new Promise(r=>setTimeout(r,1500));
+    const pollRes=await fetch('https://api.snov.io/v2/domain-emails-with-info/result/'+taskHash,{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    if(!pollRes.ok) continue;
+    const pd=await pollRes.json();
+    const status=(pd.data&&pd.data.status)||pd.status;
+    if(status==='completed'){ resultData=pd.data||pd; break; }
+  }
+  if(!resultData) return null; // timed out — fall back to AI guess rather than error out
+
+  const emails=resultData.emails||resultData.result||[];
+  if(!emails.length) return null;
+  const contacts=emails.slice(0,8).map(e=>{
+    const fname=e.firstName||e.first_name||'';
+    const lname=e.lastName||e.last_name||'';
+    const pos=e.position||e.title||'';
+    return{
+      name:[fname,lname].filter(Boolean).join(' ')||'Unknown',
+      role:pos||'Employee',
+      priority:/hr|talent|recruit|people/i.test(pos)?'high':/ceo|founder|director|head/i.test(pos)?'medium':'low',
+      email:e.email,
+      emailConfidence:e.status==='valid'?'high':'medium',
+      linkedin:e.sourcePage||e.source_page||'',
+      whyContact:pos?('Works as '+pos):'Found via Snov.io domain search',
+      source:'Snov.io (verified)'
+    };
+  }).filter(c=>c.email);
+  if(!contacts.length) return null;
+  contacts.sort((a,b)=>({high:0,medium:1,low:2}[a.priority]-{high:0,medium:1,low:2}[b.priority]));
+  return{contacts,emailPattern:'',domain:companyDomain,careersEmail:'careers@'+companyDomain,tip:'Verified via Snov.io domain search.',_real:true};
+}
+
+// ── REAL LOOKUP — Anymail Finder (domain-wide discovery, up to 20 emails/company) ──
+async function anymailCompanySearch(companyDomain,apiKey){
+  const r=await fetch('https://api.anymailfinder.com/v5.1/find-email/company',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body:JSON.stringify({domain:companyDomain})
+  });
+  if(!r.ok) throw new Error('Anymail Finder error '+r.status);
+  const d=await r.json();
+  const results=d.results||d.emails||[];
+  if(!results.length) return null;
+  const contacts=results.slice(0,10).map(e=>{
+    const name=e.full_name||e.name||[e.first_name,e.last_name].filter(Boolean).join(' ')||'Unknown';
+    const pos=e.job_title||e.position||'';
+    return{
+      name,
+      role:pos||'Employee',
+      priority:/hr|talent|recruit|people/i.test(pos)?'high':/ceo|founder|director|head/i.test(pos)?'medium':'low',
+      email:e.email,
+      emailConfidence:e.validation==='valid'||e.status==='verified'?'high':'medium',
+      linkedin:e.linkedin_url||'',
+      whyContact:pos?('Works as '+pos):'Found via Anymail Finder company search',
+      source:'Anymail Finder (verified)'
+    };
+  }).filter(c=>c.email);
+  if(!contacts.length) return null;
+  contacts.sort((a,b)=>({high:0,medium:1,low:2}[a.priority]-{high:0,medium:1,low:2}[b.priority]));
+  return{contacts,emailPattern:'',domain:companyDomain,careersEmail:'careers@'+companyDomain,tip:'Verified via Anymail Finder — real company-wide email discovery.',_real:true};
+}
+
+// ── REAL LOOKUP — Custom Vendor (best-effort generic REST caller) ──
+// Calls {endpoint}?domain=...&apikey=... and tries to parse common response shapes.
+// Works with many simple "domain search" style APIs out of the box; some may need
+// the user to pick a vendor with a matching response format.
+async function customVendorSearch(companyDomain,apiKey,endpoint){
+  if(!endpoint) throw new Error('No custom endpoint configured');
+  const url=endpoint+(endpoint.includes('?')?'&':'?')+'domain='+encodeURIComponent(companyDomain)+'&apikey='+encodeURIComponent(apiKey);
+  const r=await fetch(url,{headers:{'Authorization':'Bearer '+apiKey}});
+  if(!r.ok) throw new Error('Custom vendor error '+r.status);
+  const d=await r.json();
+  // Try several common shapes: {emails:[...]}, {data:{emails:[...]}}, {contacts:[...]}, {results:[...]}
+  const raw=d.emails||d.data?.emails||d.contacts||d.results||(Array.isArray(d)?d:[]);
+  if(!raw.length) return null;
+  const contacts=raw.slice(0,10).map(e=>{
+    const email=e.email||e.value||(typeof e==='string'?e:'');
+    const name=e.name||e.full_name||[e.first_name,e.last_name].filter(Boolean).join(' ')||'Unknown';
+    const pos=e.position||e.title||e.job_title||'';
+    return{
+      name,role:pos||'Employee',
+      priority:/hr|talent|recruit|people/i.test(pos)?'high':/ceo|founder|director|head/i.test(pos)?'medium':'low',
+      email,emailConfidence:'medium',linkedin:e.linkedin||'',
+      whyContact:pos?('Works as '+pos):'Found via your custom vendor',
+      source:'Custom Vendor'
+    };
+  }).filter(c=>c.email);
+  if(!contacts.length) return null;
+  return{contacts,emailPattern:'',domain:companyDomain,careersEmail:'careers@'+companyDomain,tip:'Found via your custom-configured vendor.',_real:true};
+}
+
+function _guessDomain(companyName){
+  return (companyName||'').toLowerCase().replace(/[^a-z0-9]+/g,'')+'.com';
+}
+
 async function hashPwd(pwd){
   const salted=pwd+'oj_s4lt_optajob_2025';
   try{
@@ -1555,6 +1779,28 @@ function ContactModal({job,profile,resume,onClose}){
   useEffect(()=>{
     (async()=>{
       try{
+        // STEP 1 — try REAL lookups, in order: Hunter.io → Apollo.io → Snov.io
+        const domain=_guessDomain(job.company);
+        const realLookups=[
+          {id:'hunter', run:async()=>{const k=LS.get(CONTACT_VENDORS.hunter.keyStore,'');  if(!k)return null; return await hunterDomainSearch(domain,k);}},
+          {id:'apollo', run:async()=>{const k=LS.get(CONTACT_VENDORS.apollo.keyStore,'');  if(!k)return null; return await apolloPeopleSearch(domain,k);}},
+          {id:'snov',   run:async()=>{const k=LS.get(CONTACT_VENDORS.snov.keyStore,'');    if(!k)return null; return await snovDomainSearch(domain,k);}},
+          {id:'anymailfinder', run:async()=>{const k=LS.get(CONTACT_VENDORS.anymailfinder.keyStore,''); if(!k)return null; return await anymailCompanySearch(domain,k);}},
+          {id:'custom', run:async()=>{const k=LS.get(CONTACT_VENDORS.custom.keyStore,''); const ep=LS.get('hm_ck_custom_endpoint',''); if(!k||!ep)return null; return await customVendorSearch(domain,k,ep);}},
+        ];
+        for(const vendor of realLookups){
+          try{
+            const real=await vendor.run();
+            if(real&&real.contacts&&real.contacts.length){
+              vendorIncrementUsage(CONTACT_VENDORS[vendor.id].usageKey);
+              setContacts(real);
+              setLoadingC(false);
+              return; // real data found, skip AI entirely
+            }
+          }catch(vErr){ /* this vendor failed or wasn't configured — try the next one */ }
+        }
+
+        // STEP 2 — fall back to AI-suggested contacts (clearly labeled, not verified)
         const contactPrompt=`Find contacts at ${job.company} for a ${job.title} role.
 Search for: CEO, Head of HR, Talent Acquisition Director, HR Manager, the recruiter who posted this job, hiring manager.
 Return ONLY valid JSON: {"contacts":[{"name":"Full Name","role":"CEO/HR/Recruiter","priority":"high","email":"email@co.com","emailConfidence":"high","linkedin":"url","whyContact":"why reach out","source":"where found"}],"emailPattern":"first.last@company.com","domain":"company.com","careersEmail":"careers@company.com","tip":"actionable tip"}
@@ -1626,6 +1872,15 @@ Priority: high=job poster/HR head, medium=CEO/manager, low=others. Find 4-6 cont
               {aiUsed&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:4,background:'rgba(34,197,94,.15)',color:'var(--ok)',border:'1px solid rgba(34,197,94,.2)'}}>🤖 AI-enhanced</span>}
             </div>
           </div>}
+          {contacts?._real?(
+            <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 12px',marginBottom:10,background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)',borderRadius:8,fontSize:12,color:'var(--ok)',fontWeight:600}}>
+              ✅ Verified contacts — found via real company email-lookup{contacts?.contacts?.[0]?.source?` (${contacts.contacts[0].source.split(' (')[0]})`:''}
+            </div>
+          ):(
+            <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 12px',marginBottom:10,background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.25)',borderRadius:8,fontSize:12,color:'var(--wa)',fontWeight:600}}>
+              ⚠️ AI-suggested contacts — not verified, please double-check before sending
+            </div>
+          )}
           {(contacts?.contacts||[]).map((c,i)=>(
             <div key={i} style={{background:'var(--s2)',borderRadius:'var(--r2)',padding:'14px',marginBottom:10,border:`1px solid ${priorityBg[c.priority]||'var(--bo)'}`}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
@@ -1858,6 +2113,34 @@ const CITY_TO_REGION={
   delhi:'north',gurgaon:'north',gurugram:'north',noida:'north',chandigarh:'north',jaipur:'north',lucknow:'north',kanpur:'north',ludhiana:'north',agra:'north',
   kolkata:'east',calcutta:'east',bhubaneswar:'east',guwahati:'east',patna:'east',ranchi:'east',siliguri:'east',
 };
+// ── AI-POWERED RESUME ANALYSIS — expert recruiter prompt, with rule-based fallback ──
+async function analyzeResumeWithAI(text,userEmail){
+  if(!isAIEnabled(userEmail)) return null; // caller falls back to rule-based extraction
+  const prompt=`You are a senior technical recruiter and resume strategist with 15+ years of experience placing candidates across tech, business, and creative roles. You know exactly which job titles a resume best matches, and which adjacent/similar roles the candidate is also realistically qualified for.
+
+Analyze this resume and respond with ONLY valid JSON, no other text:
+{"bestTitle":"most accurate current job title for this person","similarRoles":["3 to 5 other job titles this person could also strongly apply for, ordered by best fit"],"topSkills":["6 to 10 of their strongest, most marketable skills as short keywords"],"seniorityLevel":"Entry/Mid/Senior/Lead","resumeTip":"one specific, actionable tip to make this resume stronger for ATS systems and recruiters"}
+
+Resume text:
+${text.slice(0,6000)}`;
+  try{
+    const raw=await callUserAI(prompt,userEmail,false);
+    const m=raw.replace(/\`\`\`json|\`\`\`/g,'').match(/\{[\s\S]*\}/);
+    if(!m) return null;
+    const parsed=JSON.parse(m[0]);
+    return{
+      title:parsed.bestTitle||'',
+      similarRoles:Array.isArray(parsed.similarRoles)?parsed.similarRoles.slice(0,5):[],
+      skills:Array.isArray(parsed.topSkills)?parsed.topSkills.slice(0,10):[],
+      seniorityLevel:parsed.seniorityLevel||'',
+      resumeTip:parsed.resumeTip||'',
+      query:(parsed.bestTitle||'')+(parsed.topSkills?.length?' '+parsed.topSkills.slice(0,3).join(' '):''),
+      cities:suggestCitiesFromResume(text),
+      _aiPowered:true
+    };
+  }catch(e){ return null; } // AI failed — caller falls back to rule-based
+}
+
 function suggestCitiesFromResume(text){
   const t=(text||'').toLowerCase();
   let region=null;
@@ -1891,6 +2174,8 @@ function SearchScreen({user}){
   const[selCity,setSelCity]=useState([]);
   const[suggestedCities,setSuggestedCities]=useState([]);
   const[fromResume,setFromResume]=useState(false);
+  const[similarRoles,setSimilarRoles]=useState([]);
+  const[resumeTip,setResumeTip]=useState('');
   const[selType,setSelType]=useState([]);
   const[showFilters,setShowFilters]=useState(false);
   const[jobs,setJobs]=useState(null);
@@ -1909,6 +2194,8 @@ function SearchScreen({user}){
         setSuggestedCities(rs.cities);
         setSelCity(rs.cities.slice(0,1)); // pre-select the top city
       }
+      if(rs.similarRoles&&rs.similarRoles.length) setSimilarRoles(rs.similarRoles);
+      if(rs.resumeTip) setResumeTip(rs.resumeTip);
       setSortBy('match'); // sort by match by default when coming from resume
       setFromResume(true);
       setShowFilters(true); // open filters so suggestions are visible
@@ -2048,6 +2335,19 @@ Return ONLY the JSON array. No text before or after.`;
       </div>
       {showFilters&&(
         <div style={{padding:'12px 20px',background:'var(--s2)',borderBottom:'1px solid var(--bo)'}}>
+          {fromResume&&similarRoles.length>0&&(
+            <div style={{marginBottom:12,padding:'10px 12px',background:'var(--card)',borderRadius:'var(--r1)',border:'1px solid var(--ac)'}}>
+              <div className="label" style={{marginBottom:6,color:'var(--ac)'}}>🎯 You might also be a strong fit for</div>
+              <div className="chips">
+                {similarRoles.map(role=><button key={role} className={`chip ${query===role?'on':''}`} onClick={()=>setQuery(role)}>{role}</button>)}
+              </div>
+            </div>
+          )}
+          {fromResume&&resumeTip&&(
+            <div style={{marginBottom:12,padding:'10px 12px',background:'rgba(124,58,237,.08)',borderRadius:'var(--r1)',fontSize:12,color:'var(--mu)',lineHeight:1.5}}>
+              💡 <b>Resume tip:</b> {resumeTip}
+            </div>
+          )}
           <div style={{marginBottom:10}}>
             <div className="label" style={{marginBottom:6}}>Cities{fromResume&&suggestedCities.length>0&&<span style={{fontWeight:400,color:'var(--ac)',fontSize:11}}> · suggested from your resume</span>}</div>
             <div className="chips">
@@ -2241,7 +2541,7 @@ function ApplicationsScreen(){
   );
 }
 
-function ResumeScreen({onTabChange}){
+function ResumeScreen({onTabChange,user}){
   const[resumes,setResumes]=useState(()=>LS.get('hm_resumes',[]));
   const[editingId,setEditingId]=useState(null);
   const[editText,setEditText]=useState('');
@@ -2330,7 +2630,13 @@ function ResumeScreen({onTabChange}){
                 <div className="rslot-meta">{r.wordCount} words · {i===0?'Default · ':''}Saved {new Date(r.savedAt).toLocaleDateString('en-IN')}</div>
               </div>
               <div style={{display:'flex',gap:6}}>
-                <button className="btn btn-primary btn-sm" onClick={()=>{window._ojResumeSearch=extractResumeSearch(r.content);onTabChange&&onTabChange('search');}} title="Find matching jobs" style={{whiteSpace:'nowrap'}}>🔍 Find Jobs</button>
+                <button className="btn btn-primary btn-sm" onClick={async()=>{
+                  const ue=user?.email||'';
+                  let result=await analyzeResumeWithAI(r.content,ue);
+                  if(!result) result=extractResumeSearch(r.content); // fallback if AI not enabled/failed
+                  window._ojResumeSearch=result;
+                  onTabChange&&onTabChange('search');
+                }} title="Find matching jobs" style={{whiteSpace:'nowrap'}}>🔍 Find Jobs</button>
                 <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>{setEditingId(editingId===r.id?null:r.id);setEditText(r.content);}} title="Edit text">✏️</button>
                 <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>navigator.clipboard.writeText(r.content)} title="Copy"><Icon.Copy/></button>
                 <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>{const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(r.content);a.download=r.name+'.txt';a.click();}} title="Download"><Icon.Download/></button>
@@ -2361,9 +2667,6 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
   const ctx=useContext(CreditCtx);
   const[name,setName]=useState(user.name||'');
   const[phone,setPhone]=useState(user.phone||'');
-  const[hunterKey,setHunterKey]=useState(()=>LS.get('hm_hk',''));
-  const[adzunaKey,setAdzunaKey]=useState(()=>LS.get('hm_ak',''));
-  const[rapidKey,setRapidKey]=useState(()=>LS.get('hm_rk',''));
   const[section,setSection]=useState('main');
   const[avatarId,setAvatarId]=useState(()=>user.avatarId??null);
   const[showAvatarPicker,setShowAvatarPicker]=useState(false);
@@ -2382,7 +2685,7 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
   const planBg={free:'var(--s2)',starter:'var(--okp)',pro:'rgba(37,99,168,.12)',elite:'var(--ap)'};
 
   const saveProfile=()=>{
-    const u={...user,name,phone,avatarId};LS.set('hm_user',u);UDB.set(user.email,{name,phone,avatarId});LS.set('hm_hk',hunterKey);LS.set('hm_ak',adzunaKey);LS.set('hm_rk',rapidKey);
+    const u={...user,name,phone,avatarId};LS.set('hm_user',u);UDB.set(user.email,{name,phone,avatarId});
     onUpdate(u);setSaved(true);setTimeout(()=>setSaved(false),2000);
   };
 
@@ -2475,7 +2778,7 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
             <label className="label" style={{marginBottom:8}}>Choose your AI</label>
             <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>
               {Object.entries(AI_PROVIDERS).map(([id,p])=>{
-                const isActive=LS.get('hm_ai_provider','ai')===id;
+                const isActive=LS.get('hm_ai_provider','claude')===id;
                 return(
                   <div key={id}
                     onClick={()=>{LS.set('hm_ai_provider',id);saveProfile();}}
@@ -2489,7 +2792,10 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
                       {isActive&&<div style={{width:10,height:10,borderRadius:'50%',background:'var(--ok)'}}/>}
                     </div>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{p.name}</div>
+                      <div style={{fontSize:13,fontWeight:600,color:'var(--tx)',display:'flex',alignItems:'center',gap:6}}>
+                        {p.name}
+                        {p.freeTier?<span style={{fontSize:9,padding:'2px 6px',borderRadius:8,background:'var(--okp)',color:'var(--ok)',fontWeight:700}}>FREE</span>:<span style={{fontSize:9,padding:'2px 6px',borderRadius:8,background:'var(--erp)',color:'var(--er)',fontWeight:700}}>PAID</span>}
+                      </div>
                       <div style={{fontSize:11,color:'var(--mu)'}}>{p.sub} · {p.free}</div>
                     </div>
                   </div>
@@ -2499,7 +2805,7 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
 
             {/* Key input for selected provider */}
             {(()=>{
-              const pId=LS.get('hm_ai_provider','ai');
+              const pId=LS.get('hm_ai_provider','claude');
               const p=AI_PROVIDERS[pId];
               if(!p)return null;
               const [kv,setKv]=useState(()=>LS.get(p.keyStore,''));
@@ -2522,7 +2828,8 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
                   </div>
                   <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
                     <button className="btn btn-outline-accent btn-sm" onClick={doTest} disabled={testing||!kv.trim()}>{testing?<><AnimatedLoader size="sm"/> Testing…</>:'🔌 Test Connection'}</button>
-                    <a href={p.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:'var(--pr)'}}>Get free key →</a>
+                    {p.signupUrl&&<a href={p.signupUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:'var(--mu)'}}>1. Sign up →</a>}
+                    <a href={p.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:'var(--pr)'}}>2. Get API key →</a>
                   </div>
                   {testResult&&<div style={{padding:'8px 12px',borderRadius:'var(--r1)',background:testResult.ok?'var(--okp)':'var(--erp)',color:testResult.ok?'var(--ok)':'var(--er)',fontSize:12,fontWeight:500}}>{testResult.ok?'✅':'❌'} {testResult.msg}</div>}
                 </div>
@@ -2541,25 +2848,6 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
           </div>
         )}
 
-        {/* Standard API keys */}
-        <label className="label" style={{marginBottom:10}}>Job Search & Contact APIs</label>
-        {[
-          {k:'hunter',lbl:'Hunter.io',sub:'Email finder · Free: 25/month',ph:'Your Hunter.io API key',val:hunterKey,set:setHunterKey,link:'https://hunter.io/api',gId:'hunter'},
-          {k:'adzuna',lbl:'Adzuna',sub:'Job search · Free: 1,000/month',ph:'Your Adzuna API key',val:adzunaKey,set:setAdzunaKey,link:'https://developer.adzuna.com',gId:'adzuna'},
-          {k:'rapid',lbl:'RapidAPI',sub:'JSearch · Free: 500/month',ph:'Your RapidAPI key',val:rapidKey,set:setRapidKey,link:'https://rapidapi.com',gId:'rapidapi'},
-        ].map(f=>(
-          <div key={f.k} className="field">
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-              <label className="label" style={{marginBottom:0}}>{f.lbl} <span style={{textTransform:'none',letterSpacing:0,fontWeight:400}}>— {f.sub}</span></label>
-              <button className="btn btn-outline-accent btn-sm" style={{fontSize:11,padding:'4px 10px'}} onClick={()=>setGuideId(f.gId)}>📖 Setup Guide</button>
-            </div>
-            <div style={{display:'flex',gap:8,marginBottom:4}}>
-              <input className="input" type={showKey[f.k]?'text':'password'} value={f.val} onChange={e=>f.set(e.target.value)} placeholder={f.ph} style={{flex:1}}/>
-              <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>setShowKey(s=>({...s,[f.k]:!s[f.k]}))}>{showKey[f.k]?<Icon.EyeOff/>:<Icon.Eye/>}</button>
-            </div>
-            <a href={f.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:'var(--pr)'}}>Get free key →</a>
-          </div>
-        ))}
         <button className="btn btn-primary btn-full" onClick={saveProfile} style={{marginTop:8}}>{saved?'✓ Saved!':'Save Keys'}</button>
 
         {/* Contact Finder Multi-Vendor Section */}
@@ -2572,24 +2860,43 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
             const stored=LS.get(meta.keyStore,'');
             const[val,setVal]=useState(stored);
             const[show,setShow]=useState(false);
+            const used=meta.monthlyLimit>0?_vendorUsage(meta.usageKey):0;
+            const pct=meta.monthlyLimit>0?Math.min(100,Math.round(used/meta.monthlyLimit*100)):0;
+            const lowQuota=meta.monthlyLimit>0&&pct>=80;
             return(
               <div key={id} className={`vendor-card${stored?' configured':''}`}>
                 <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:6}}>
                   <div style={{flex:1}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                       <span style={{fontSize:13,fontWeight:700,color:'var(--tx)'}}>{meta.name}</span>
                       {stored&&<span style={{fontSize:10,padding:'2px 6px',background:'var(--okp)',color:'var(--ok)',borderRadius:8,fontWeight:700}}>✓ Configured</span>}
                       <span style={{fontSize:10,color:'var(--mu)'}}>{meta.free} free</span>
                     </div>
                     <div style={{fontSize:11,color:'var(--mu)'}}>{meta.note}</div>
                   </div>
-                  {meta.link&&<a href={meta.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:'var(--pr)',flexShrink:0}}>Get key →</a>}
+                  <div style={{display:'flex',flexDirection:'column',gap:2,alignItems:'flex-end',flexShrink:0}}>
+                    {meta.signupUrl&&<a href={meta.signupUrl} target="_blank" rel="noreferrer" style={{fontSize:10.5,color:'var(--mu)'}}>1. Sign up →</a>}
+                    {meta.link&&<a href={meta.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:'var(--pr)'}}>2. Get key →</a>}
+                  </div>
                 </div>
+                {stored&&meta.monthlyLimit>0&&(
+                  <div style={{marginBottom:8}}>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:10.5,color:lowQuota?'var(--er)':'var(--mu)',marginBottom:3}}>
+                      <span>{used} / {meta.monthlyLimit} used this month</span>
+                      {lowQuota&&<span style={{fontWeight:700}}>⚠️ Running low</span>}
+                    </div>
+                    <div style={{height:4,background:'var(--s2)',borderRadius:2,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:pct+'%',background:lowQuota?'var(--er)':'var(--ok)'}}/>
+                    </div>
+                    {lowQuota&&<div style={{fontSize:10.5,color:'var(--mu)',marginTop:4}}>💡 Add another vendor below, or check {meta.name}'s pricing page for a paid plan.</div>}
+                  </div>
+                )}
                 <div style={{display:'flex',gap:6}}>
                   <input className="input" type={show?'text':'password'} value={val} onChange={e=>{setVal(e.target.value);LS.set(meta.keyStore,e.target.value);}}
                     placeholder={id==='custom'?'API Key (also fill endpoint below)':meta.keyPh} style={{flex:1,fontSize:13}}/>
                   <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>setShow(v=>!v)}>{show?<Icon.EyeOff/>:<Icon.Eye/>}</button>
                 </div>
+                {id==='snov'&&<div style={{fontSize:10.5,color:'var(--mu)',marginTop:-4,marginBottom:6}}>💡 Find both in Snov.io → Settings → API & Integrations. Paste as: <code style={{color:'var(--ac)'}}>yourClientId:yourClientSecret</code></div>}
                 {id==='custom'&&<input className="input" style={{marginTop:6,fontSize:12}} value={LS.get('hm_ck_custom_endpoint','')} onChange={e=>LS.set('hm_ck_custom_endpoint',e.target.value)} placeholder="Custom vendor API endpoint URL"/>}
               </div>
             );
@@ -3065,7 +3372,10 @@ function AdminQueriesTab(){
         <div key={q.id} style={{background:'var(--s)',border:`1px solid ${q.status==='open'?'rgba(245,158,11,.3)':'var(--bo)'}`,borderRadius:'var(--r2)',padding:'14px',marginBottom:10}}>
           <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:8}}>
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{q.userName}</div>
+              <div style={{fontSize:13,fontWeight:600,color:'var(--tx)',display:'flex',alignItems:'center',gap:6}}>
+                {q.userName}
+                {q.type==='vendor_request'&&<span style={{fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:8,background:'rgba(124,58,237,.15)',color:'#7c3aed'}}>🔌 VENDOR REQUEST</span>}
+              </div>
               <div style={{fontSize:11,color:'var(--mu)'}}>{q.userEmail} · {new Date(q.createdAt).toLocaleString('en-IN')}</div>
             </div>
             <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:4,background:statusColor[q.status]+'20',color:statusColor[q.status],border:`1px solid ${statusColor[q.status]}40`,flexShrink:0}}>{q.status.toUpperCase()}</span>
@@ -3614,9 +3924,9 @@ function HelpScreen({user,onBack}){
     ?FAQ_ITEMS.filter(f=>f.keywords.some(k=>searchQ.toLowerCase().includes(k))||f.q.toLowerCase().includes(searchQ.toLowerCase()))
     :FAQ_ITEMS;
 
-  const sendQuery=()=>{
+  const sendQuery=(type='general')=>{
     if(!queryText.trim())return;
-    const q={id:Date.now(),userEmail:user?.email||'',userName:user?.name||'User',question:queryText.trim(),status:'open',adminReply:null,createdAt:Date.now()};
+    const q={id:Date.now(),userEmail:user?.email||'',userName:user?.name||'User',question:queryText.trim(),status:'open',adminReply:null,createdAt:Date.now(),type};
     const all=LS.get('hm_queries',[]);
     all.unshift(q);
     LS.set('hm_queries',all);
@@ -3624,6 +3934,18 @@ function HelpScreen({user,onBack}){
     setQueryText('');
     setQuerySent(true);
     setTimeout(()=>setQuerySent(false),3000);
+  };
+  const[vendorReqText,setVendorReqText]=useState('');
+  const[vendorReqSent,setVendorReqSent]=useState(false);
+  const sendVendorRequest=()=>{
+    if(!vendorReqText.trim())return;
+    const q={id:Date.now(),userEmail:user?.email||'',userName:user?.name||'User',question:'Vendor request: '+vendorReqText.trim(),status:'open',adminReply:null,createdAt:Date.now(),type:'vendor_request'};
+    const all=LS.get('hm_queries',[]);
+    all.unshift(q);
+    LS.set('hm_queries',all);
+    setVendorReqText('');
+    setVendorReqSent(true);
+    setTimeout(()=>setVendorReqSent(false),3000);
   };
 
   const APP_GUIDES=[
@@ -3738,7 +4060,21 @@ function HelpScreen({user,onBack}){
               <label className="label">Your Question</label>
               <textarea className="input" value={queryText} onChange={e=>setQueryText(e.target.value)} placeholder="Describe your issue or question in detail. The more specific you are, the better the admin can help." style={{minHeight:120,resize:'vertical'}}/>
             </div>
-            <button className="btn btn-primary btn-full" onClick={sendQuery} disabled={!queryText.trim()}>Send to Admin →</button>
+            <button className="btn btn-primary btn-full" onClick={()=>sendQuery('general')} disabled={!queryText.trim()}>Send to Admin →</button>
+
+            {/* Request a Vendor */}
+            <div style={{marginTop:24,padding:14,background:'var(--s2)',border:'1px solid var(--bo)',borderRadius:'var(--r2)'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'var(--tx)',marginBottom:4}}>🔌 Want a vendor we don't support yet?</div>
+              <div style={{fontSize:11.5,color:'var(--mu)',marginBottom:10,lineHeight:1.5}}>Tell us which contact-finder or AI vendor you'd like added (e.g. "Clearbit" or "RocketReach"). The admin reviews these and can add new vendors to the app.</div>
+              {vendorReqSent?(
+                <div style={{padding:'10px 12px',background:'var(--okp)',color:'var(--ok)',borderRadius:'var(--r1)',fontSize:12.5,fontWeight:600}}>✅ Request sent — thank you!</div>
+              ):(
+                <>
+                  <input className="input" value={vendorReqText} onChange={e=>setVendorReqText(e.target.value)} placeholder="Vendor name + why you'd like it added…" style={{marginBottom:8,fontSize:13}}/>
+                  <button className="btn btn-outline-accent btn-full btn-sm" onClick={sendVendorRequest} disabled={!vendorReqText.trim()}>Request This Vendor →</button>
+                </>
+              )}
+            </div>
 
             {/* My previous queries */}
             {myQueries.length>0&&(
@@ -4262,7 +4598,7 @@ function App(){
           {tab==='home'&&<HomeScreen user={user} onTabChange={setTab}/>}
           {tab==='search'&&<SearchScreen user={user}/>}
           {tab==='applications'&&<ApplicationsScreen/>}
-          {tab==='resume'&&<ResumeScreen onTabChange={setTab}/>}
+          {tab==='resume'&&<ResumeScreen onTabChange={setTab} user={user}/>}
           {tab==='profile'&&(
             <ProfileScreen user={user} onUpdate={updateUser} onLogout={handleLogout}
               theme={theme} setTheme={setTheme} isDark={isDark} setIsDark={setIsDark}/>
