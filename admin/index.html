@@ -801,14 +801,19 @@ async function loadUsers() {
   } catch(e) { console.warn('loadUsers:', e); }
 }
 async function suspendUser(email){
+  if(!confirm('Suspend '+email+'? They will not be able to use the app until reinstated.'))return;
   try{
-    await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({status:'suspended',updated_at:new Date().toISOString()})});
+    var res = await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=representation',body:JSON.stringify({status:'suspended',updated_at:new Date().toISOString()})});
+    if(res && res.length){ alert('✅ '+email+' suspended.'); }
+    else { alert('⚠️ Update sent but database returned no rows — the change may not have saved. Check RLS policies.'); }
     loadUsers();
   }catch(e){alert('Could not suspend user: '+e.message);}
 }
 async function reinstateUser(email){
   try{
-    await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({status:'active',updated_at:new Date().toISOString()})});
+    var res = await sbAdmin('users?email=eq.'+encodeURIComponent(email),{method:'PATCH',prefer:'return=representation',body:JSON.stringify({status:'active',updated_at:new Date().toISOString()})});
+    if(res && res.length){ alert('✅ '+email+' reinstated.'); }
+    else { alert('⚠️ Update sent but database returned no rows — the change may not have saved.'); }
     loadUsers();
   }catch(e){alert('Could not reinstate user: '+e.message);}
 }

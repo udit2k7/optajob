@@ -2288,6 +2288,7 @@ function ProfileScreen({user,onUpdate,onLogout,theme,setTheme,isDark,setIsDark})
   const batches=ctx?.batches||[];
   const tot=ctx?.tot||0;
   const dailyFree=Math.max(0,DAILY_FREE-Credits.dailyUsed());
+  const freeDaysLeft=Credits.freeDaysLeft();
   const fmtExp=ts=>{const d=Math.ceil((ts-Date.now())/86400000);return`${d}d`;};
   const planColor={free:'var(--mu)',starter:'var(--ok)',pro:'var(--pr)',elite:'var(--ac)'};
   const planBg={free:'var(--s2)',starter:'var(--okp)',pro:'rgba(37,99,168,.12)',elite:'var(--ap)'};
