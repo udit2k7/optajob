@@ -4114,7 +4114,46 @@ function App(){
     // Show onboarding to new users only
     if(!LS.get('hm_onboarding_done'))setShowOnboarding(true);
   };
-  const handleLogout=()=>{LS.set('hm_user',null);setUser(null);};
+  const handleLogout=(reason)=>{
+    LS.set('hm_user',null);
+    setUser(null);
+    setAdminMode(false);
+    setTab('home');
+    if(reason){ try{ sessionStorage.setItem('hm_logout_reason',reason); }catch(e){} }
+  };
+
+  // ── LIVE SUSPEND CHECK — re-verify account status on every interaction ──
+  // If an admin suspends the account while the user is mid-session, this
+  // catches it on their next click and logs them out instantly.
+  const _lastStatusCheck=useRef(0);
+  useEffect(()=>{
+    if(!user||!user.email) return;
+    let cancelled=false;
+    async function checkStatus(){
+      const now=Date.now();
+      // Throttle: at most one DB check every 4 seconds, even on rapid clicks
+      if(now-_lastStatusCheck.current<4000) return;
+      _lastStatusCheck.current=now;
+      try{
+        const fresh=await UDB.getFresh(user.email);
+        if(cancelled) return;
+        if(fresh && fresh.status==='suspended'){
+          handleLogout('suspended');
+          setTimeout(()=>{ try{ window.alert('Your account has been suspended by the administrator. Please contact support if you believe this is a mistake.'); }catch(e){} },50);
+        }
+      }catch(e){ /* offline or transient — do not log out on network errors */ }
+    }
+    const onAnyClick=()=>{ checkStatus(); };
+    document.addEventListener('click',onAnyClick,true);
+    // Also check immediately when the tab regains focus
+    const onFocus=()=>{ _lastStatusCheck.current=0; checkStatus(); };
+    window.addEventListener('focus',onFocus);
+    return()=>{
+      cancelled=true;
+      document.removeEventListener('click',onAnyClick,true);
+      window.removeEventListener('focus',onFocus);
+    };
+  },[user]);
   const handleSplashDone=()=>{LS.set('hm_splash_shown',true);setShowSplash(false);};
   const updateUser=u=>{LS.set('hm_user',u);setUser(u);};
 
@@ -4161,6 +4200,17 @@ function AuthScreen({onLogin}) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+
+  // Show a message if the user was just logged out because of suspension
+  useEffect(()=>{
+    try{
+      const reason=sessionStorage.getItem('hm_logout_reason');
+      if(reason==='suspended'){
+        setErr('Your account has been suspended. Please contact support.');
+        sessionStorage.removeItem('hm_logout_reason');
+      }
+    }catch(e){}
+  },[]);
 
   function showErr(e) { setErr(e); setLoading(false); }
 
