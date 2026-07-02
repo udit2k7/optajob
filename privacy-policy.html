@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | OptaJob</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-deep: #050b14; --text-main: #f8fafc; --text-muted: #94a3b8; --accent-teal: #3dbfa0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-deep); color: var(--text-main); line-height: 1.6; padding: 40px 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: var(--accent-teal); font-size: 32px; margin-bottom: 8px; }
+        h2 { font-size: 20px; margin-top: 32px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        p, li { color: var(--text-muted); font-size: 15px; margin-bottom: 16px; }
+        ul { margin-left: 20px; margin-bottom: 24px; }
+        .back-link { display: inline-block; margin-bottom: 32px; color: var(--accent-teal); text-decoration: none; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to OptaJob</a>
+    <h1>Privacy Policy</h1>
+    <p><strong>Effective Date:</strong> July 2026</p>
+
+    <h2>1. Information We Collect</h2>
+    <p>OptaJob ("we", "our", "us") collects basic account information (Email Address) via Firebase Authentication to synchronize your saved jobs and portfolio vault across devices.</p>
+
+    <h2>2. AI API Keys & On-Device Processing</h2>
+    <p>OptaJob utilizes a Bring Your Own Key (BYOK) model. Your personal API keys (Google Gemini, Groq) are encrypted and stored <strong>strictly on your local device hardware</strong>. We do not transmit, log, or store your personal AI keys on our servers. All resume parsing and AI generation occurs via direct client-to-provider secure connections.</p>
+
+    <h2>3. Third-Party Advertising & Cookies</h2>
+    <p>To keep the platform accessible, we utilize third-party vendors, including Google AdMob. Google uses cookies to serve ads based on a user's prior visits to this app or other websites. Users may opt out of personalized advertising by visiting Google's Ads Settings.</p>
+
+    <h2>4. Data Security & Isolation</h2>
+    <p>Your portfolio data (Cover Letters, Tailored Resumes) is isolated using strict Firestore security rules. No other user or unauthorized entity can read or access your career documents.</p>
+
+    <h2>5. Contact</h2>
+    <p>For data deletion requests or privacy inquiries, contact: support@optajob.com.</p>
+</body>
+</html>
