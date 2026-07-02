@@ -1,536 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OptaJob — AI Job Search for India | Choose Your Job</title>
-<meta name="description" content="OptaJob is India's smartest AI-powered job search app. Find real jobs, tailor your resume automatically, and contact the right HR person — all in one tap.">
-<meta name="keywords" content="job search India, AI resume builder, find jobs, HR contact finder, jobs in Bangalore, jobs in Mumbai, freshers jobs, career India">
-<meta property="og:title" content="OptaJob — Choose Your Job">
-<meta property="og:description" content="AI-powered job search for India. Find jobs, tailor resumes, contact HR — all in one app.">
-<meta property="og:image" content="https://optajob.com/assets/og-image.png">
-<meta property="og:url" content="https://optajob.com">
-<link rel="canonical" href="https://optajob.com">
-<link rel="icon" type="image/png" href="/assets/images/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/images/logo_transparent.png">
-<link rel="stylesheet" href="/assets/css/style.css">
-<style>
-.hero-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
-.particle{position:absolute;width:3px;height:3px;border-radius:50%;background:#5dd4b8;opacity:0;animation:particleFloat 8s ease-in-out infinite;}
-@keyframes particleFloat{0%{opacity:0;transform:translateY(100vh) scale(0);}10%{opacity:.6;}90%{opacity:.3;}100%{opacity:0;transform:translateY(-20vh) scale(1.5);}}
-.trust-bar{background:#0a1628;border-top:2px solid rgba(61,191,160,.25);border-bottom:2px solid rgba(61,191,160,.25);padding:18px 0;overflow:hidden;}
-.trust-inner{display:flex;align-items:center;gap:48px;animation:scroll 28s linear infinite;white-space:nowrap;}
-.trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.85);font-size:.88rem;font-weight:600;flex-shrink:0;letter-spacing:.01em;}
-.trust-dot{width:7px;height:7px;border-radius:50%;background:#3dbfa0;box-shadow:0 0 6px rgba(61,191,160,.6);flex-shrink:0;}
-@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-.pricing-card{border-radius:24px;padding:36px;border:1px solid rgba(0,0,0,.08);transition:all .25s;}
-.pricing-card:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(0,0,0,.12);}
-.pricing-card.featured{background:linear-gradient(135deg,#0e2550,#1b3f7d);color:white;border-color:transparent;box-shadow:0 24px 48px rgba(27,63,125,.3);}
-.pricing-card.featured p,.pricing-card.featured li{color:rgba(255,255,255,.7);}
-.pricing-price{font-family:'Syne',sans-serif;font-size:3rem;font-weight:800;line-height:1;}
-.pricing-period{font-size:.9rem;font-weight:400;color:#94a3b8;}
-.pricing-list{list-style:none;padding:0;margin:24px 0;}
-.pricing-list li{padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;font-size:.92rem;color:#475569;}
-.pricing-card.featured .pricing-list li{border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.8);}
-.pricing-list li::before{content:'✓';color:#3dbfa0;font-weight:700;flex-shrink:0;}
-.download-badge{display:inline-flex;align-items:center;gap:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:14px 20px;transition:all .2s;cursor:pointer;}
-.download-badge:hover{background:rgba(255,255,255,.18);transform:translateY(-2px);}
-.download-badge-icon{font-size:1.8rem;}
-.download-badge-text-small{font-size:.7rem;color:rgba(255,255,255,.6);display:block;}
-.download-badge-text-big{font-size:1rem;font-weight:700;color:white;display:block;}
-.faq-item{border-bottom:1px solid rgba(0,0,0,.08);padding:20px 0;}
-.faq-question{font-size:1.05rem;font-weight:600;color:#1b3f7d;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;}
-.faq-answer{font-size:.95rem;color:#475569;line-height:1.75;margin-top:14px;display:none;}
-.faq-item.open .faq-answer{display:block;}
-.faq-item.open .faq-icon{transform:rotate(45deg);}
-.faq-icon{transition:transform .2s;color:#3dbfa0;font-size:1.4rem;font-weight:300;flex-shrink:0;}
-.video-section{background:#f8fafc;}
-.video-wrap{border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.06);background:#0e2550;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;}
-.video-play{width:72px;height:72px;border-radius:50%;background:rgba(61,191,160,.9);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
-.video-play:hover{background:#3dbfa0;transform:scale(1.1);}
-.video-play svg{margin-left:4px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OptaJob - India's premium AI-powered career ecosystem. Bypass ATS bots, generate tailored resumes, and find top jobs in India instantly.">
+    <meta name="keywords" content="AI Resume Builder, ATS Scanner, Job Search India, Cover Letter Generator, OptaJob, Udit Tandon">
+    <meta name="author" content="Udit Tandon">
+    <title>OptaJob | The Futuristic AI Career Ecosystem</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ==========================================================================
+           FUTURISTIC UI SYSTEM VARIABLES
+           ========================================================================== */
+        :root {
+            --bg-deep: #050b14;
+            --bg-card: rgba(14, 37, 80, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-teal: #3dbfa0;
+            --accent-indigo: #6366f1;
+            --border-glow: rgba(61, 191, 160, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+                              radial-gradient(circle at 85% 30%, rgba(61, 191, 160, 0.08), transparent 25%);
+        }
+
+        /* Typography */
+        h1, h2, h3 { line-height: 1.2; letter-spacing: -0.5px; }
+        .gradient-text {
+            background: linear-gradient(90deg, var(--accent-teal), var(--accent-indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 40px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .glass-panel:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-glow);
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 5%;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            background: rgba(5, 11, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 600; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--accent-teal); }
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent-teal), #2b997c);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(61, 191, 160, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(61, 191, 160, 0.5); }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            margin-top: 60px;
+        }
+        .badge {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .hero h1 { font-size: 64px; font-weight: 900; max-width: 900px; margin-bottom: 24px; }
+        .hero p { font-size: 18px; color: var(--text-muted); max-width: 600px; margin-bottom: 40px; }
+
+        /* Container & Grid */
+        .container { max-width: 1200px; margin: 0 auto; padding: 100px 20px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+
+        /* Typography Helpers */
+        .section-title { font-size: 36px; font-weight: 900; margin-bottom: 16px; text-align: center; }
+        .section-subtitle { text-align: center; color: var(--text-muted); margin-bottom: 60px; font-size: 16px; }
+
+        /* Features */
+        .feature-icon { font-size: 32px; margin-bottom: 20px; }
+        .feature-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+        .feature-desc { color: var(--text-muted); font-size: 14px; }
+
+        /* Accordion FAQ */
+        details {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            padding: 20px;
+        }
+        summary { font-weight: 600; font-size: 16px; cursor: pointer; list-style: none; outline: none; }
+        summary::-webkit-details-marker { display: none; }
+        details p { color: var(--text-muted); margin-top: 16px; font-size: 14px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px; }
+
+        /* Footer */
+        footer {
+            background: #02060c;
+            padding: 60px 5%;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+        }
+        .footer-links { margin-top: 24px; display: flex; justify-content: center; gap: 24px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; }
+        .footer-links a:hover { color: var(--text-main); }
+        .made-in-india { margin-top: 40px; font-size: 14px; color: var(--text-muted); font-weight: 600; }
+        .made-in-india span { color: var(--accent-teal); }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 40px; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .nav-links { display: none; /* Add a hamburger menu later if needed */ }
+        }
+    </style>
 </head>
 <body>
 
-<!-- NAVIGATION -->
-<nav class="nav" id="nav">
-  <div class="container">
-    <div class="nav-inner">
-      <a href="/" class="nav-logo">
-        <img src="/assets/images/logo_transparent.png" alt="OptaJob logo" style="width:38px;height:38px;object-fit:contain;flex-shrink:0;">
-        <span class="nav-logo-text">opta<span>job</span></span>
-      </a>
-      <div class="nav-links">
-        <a href="/#features">Features</a>
-        <a href="/#how-it-works">How it Works</a>
-        <a href="/#pricing">Pricing</a>
-        <a href="/about">About</a>
-        <a href="/#faq">FAQ</a>
-      </div>
-      <div class="nav-cta">
-        <a href="/admin" class="btn btn-ghost btn-sm">Admin</a>
-        <a href="#download" class="btn btn-primary btn-sm">Download App</a>
-      </div>
-      <button class="hamburger" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </div>
-</nav>
-
-<!-- MOBILE MENU -->
-<div class="mobile-menu">
-  <button class="mobile-menu-close">✕</button>
-  <div class="mobile-menu-links">
-    <a href="/#features">Features</a>
-    <a href="/#how-it-works">How it Works</a>
-    <a href="/#pricing">Pricing</a>
-    <a href="/about">About</a>
-    <a href="/#faq">FAQ</a>
-    <a href="/admin">Admin Login</a>
-  </div>
-  <a href="#download" class="btn btn-primary" style="margin-top:32px">Download App</a>
-</div>
-
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-bg-orb" style="width:600px;height:600px;top:-200px;right:-100px;"></div>
-  <div class="hero-bg-orb" style="width:400px;height:400px;bottom:-100px;left:-100px;opacity:.08;"></div>
-  <div class="hero-particles"></div>
-  <div class="container">
-    <div class="hero-grid">
-      <div class="hero-content">
-        <div class="hero-eyebrow">
-          <span class="badge badge-white">🚀 Now Live · Made for India by Udit Tandon</span>
+    <nav>
+        <div class="logo">Opta<span style="color: var(--accent-teal);">Job</span></div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#vision">Mission & Vision</a>
+            <a href="#faq">FAQ</a>
+            <a href="#" style="color: var(--accent-indigo);">Top Up Credits <span style="font-size:10px; border:1px solid var(--accent-indigo); padding: 2px 6px; border-radius:10px; margin-left:4px;">Soon</span></a>
+            <a href="#" class="btn-primary">Get the App</a>
         </div>
-        <h1 class="hero-title">
-          Choose Your <span>Job</span><br>with AI Precision
-        </h1>
-        <p class="hero-subtitle">
-          OptaJob finds real jobs, tailors your resume automatically, and helps you reach the actual HR manager — all in one app. No more guesswork.
+    </nav>
+
+    <header class="hero">
+        <div class="badge">Built Exclusively for the Indian Market</div>
+        <h1>Hack the ATS. <br><span class="gradient-text">Secure the Interview.</span></h1>
+        <p>OptaJob is a military-grade, on-device AI career ecosystem. Instantly scan your resume against live job descriptions, rewrite your profile for keyword supremacy, and deploy auto-generated cover letters.</p>
+        <a href="#" class="btn-primary" style="padding: 16px 32px; font-size: 16px;">Download on Google Play</a>
+    </header>
+
+    <section id="vision" class="container">
+        <div class="grid-2">
+            <div class="glass-panel">
+                <h3 class="feature-title" style="color: var(--accent-teal); font-size: 24px;">Our Mission</h3>
+                <p class="feature-desc" style="font-size: 16px; line-height: 1.8;">To democratize elite career advancement for the Indian workforce. By putting enterprise-grade AI directly onto the user's mobile device, we eliminate the expensive middlemen of the recruiting world and give every job seeker an unfair advantage.</p>
+            </div>
+            <div class="glass-panel">
+                <h3 class="feature-title" style="color: var(--accent-indigo); font-size: 24px;">Our Vision</h3>
+                <p class="feature-desc" style="font-size: 16px; line-height: 1.8;">A borderless, frictionless job market where talent perfectly aligns with opportunity. Starting in India, OptaJob is laying the groundwork to scale globally to the US, Middle East, Australia, and Europe, establishing a unified worldwide career vault.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="container">
+        <h2 class="section-title">The Tactical <span class="gradient-text">AI Suite</span></h2>
+        <p class="section-subtitle">A premium toolkit engineered to get you past the algorithms and in front of humans.</p>
+        
+        <div class="grid-3">
+            <div class="glass-panel">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">Aggressive ATS Scanner</h3>
+                <p class="feature-desc">Stop guessing. OptaJob dissects your resume against the Job Description and identifies the exact metric liabilities that automated HR parsers will penalize you for.</p>
+            </div>
+            <div class="glass-panel">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">Auto-Tailor Engine</h3>
+                <p class="feature-desc">Tap one button to have the AI rewrite your profile to perfectly match the tone, industry jargon, and required keywords of the target job—without hallucinating fake experience.</p>
+            </div>
+            <div class="glass-panel">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Multi-Vendor Failsafe</h3>
+                <p class="feature-desc">Never hit a dead end. Our enterprise Smart Waterfall backend aggregates data from JSearch, Apify, and TheirStack, ensuring you see every live job on the market.</p>
+            </div>
+            <div class="glass-panel">
+                <div class="feature-icon">🔐</div>
+                <h3 class="feature-title">On-Device Encryption</h3>
+                <p class="feature-desc">Your AI keys and personal resumes never touch our servers. OptaJob securely processes massive Language Models entirely on your local device hardware for maximum privacy.</p>
+            </div>
+            <div class="glass-panel">
+                <div class="feature-icon">💼</div>
+                <h3 class="feature-title">The Portfolio Vault</h3>
+                <p class="feature-desc">Every AI-generated cover letter and tailored resume is permanently secured in your local Vault, ready to be copied and pasted directly into your job application.</p>
+            </div>
+            <div class="glass-panel">
+                <div class="feature-icon">💳</div>
+                <h3 class="feature-title">Transparent Economy</h3>
+                <p class="feature-desc">No hidden subscriptions. Earn free AI Credits by watching sponsored videos, or seamlessly top up your wallet via secure Web Payments (Launching soon).</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="container" style="max-width: 800px;">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">Everything you need to know about OptaJob.</p>
+        
+        <details>
+            <summary>Is OptaJob free to use?</summary>
+            <p>Yes. The app operates on an AI Credit Economy. Every user starts with 5 free credits. You can earn infinite free credits by watching short sponsored ads, or purchase premium fiat packs to skip the ads.</p>
+        </details>
+        <details>
+            <summary>How does the app protect my resume data?</summary>
+            <p>OptaJob utilizes a "Bring Your Own Key" (BYOK) architecture. Your Gemini and Groq API keys are encrypted securely to your phone's physical hardware. We do not log your resume text on our central servers.</p>
+        </details>
+        <details>
+            <summary>Is OptaJob only for jobs in India?</summary>
+            <p>Currently, the AI algorithms and market analytics are hyper-tuned for the Indian corporate sector. However, our aggressive roadmap includes imminent launches for the US, Middle East, Australia, and the UK.</p>
+        </details>
+        <details>
+            <summary>How do I buy credits online?</summary>
+            <p>Our secure web-based payment portal is currently under construction. Once live, you will be able to log in to optajob.com to manage your wallet and purchase fiat packs that instantly sync to your mobile app.</p>
+        </details>
+    </section>
+
+    <footer>
+        <div class="logo">Opta<span style="color: var(--accent-teal);">Job</span></div>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Empowering the modern workforce. OptaJob utilizes third-party AdMob vendors, which may use cookies to serve personalized ads based on your prior visits. 
         </p>
-        <div class="hero-actions">
-          <a href="#download" class="btn btn-primary btn-lg">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16l-4-4h3V4h2v8h3l-4 4z"/><path d="M20 20H4"/></svg>
-            Download Free
-          </a>
-          <a href="/#how-it-works" class="btn btn-ghost btn-lg">See How it Works</a>
+        
+        <div class="footer-links">
+            <a href="privacy-policy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="app-ads.txt">app-ads.txt</a>
+            <a href="mailto:support@optajob.com">Contact Support</a>
         </div>
-        <div class="hero-stats">
-          <div>
-            <div class="hero-stat-num"><span data-target="1200" data-suffix="+">1,200+</span></div>
-            <div class="hero-stat-lbl">Beta Users</div>
-          </div>
-          <div>
-            <div class="hero-stat-num"><span data-target="200" data-suffix="+">200+</span></div>
-            <div class="hero-stat-lbl">Jobs Indexed Daily</div>
-          </div>
-          <div>
-            <div class="hero-stat-num"><span data-target="9" data-suffix="">9</span></div>
-            <div class="hero-stat-lbl">Contact Finder Vendors</div>
-          </div>
+
+        <div class="made-in-india">
+            Engineered & Designed in <span>India</span> by <strong>Udit Tandon</strong>
         </div>
-      </div>
-      <!-- Phone Mockup SVG -->
-      <div class="phone-wrap">
-        <div class="phone-glow"></div>
-        <svg class="phone-float" width="280" height="560" viewBox="0 0 280 560" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Phone body -->
-          <rect x="4" y="4" width="272" height="552" rx="38" fill="#0e2550" stroke="#1b3f7d" stroke-width="2"/>
-          <rect x="12" y="12" width="256" height="536" rx="30" fill="#0a1628"/>
-          <!-- Notch -->
-          <rect x="110" y="16" width="60" height="12" rx="6" fill="#0e2550"/>
-          <!-- Screen content -->
-          <rect x="12" y="28" width="256" height="520" rx="28" fill="#0a1628"/>
-          <!-- Top bar -->
-          <rect x="20" y="40" width="240" height="48" rx="14" fill="#0e2550"/>
-          <text x="36" y="62" font-family="sans-serif" font-weight="800" font-size="13" fill="#5dd4b8">opta</text>
-          <text x="72" y="62" font-family="sans-serif" font-weight="800" font-size="13" fill="white">job</text>
-          <circle cx="228" cy="58" r="14" fill="#1b3f7d"/>
-          <text x="221" y="63" font-family="sans-serif" font-size="12" fill="#5dd4b8">UI</text>
-          <!-- Credits pill -->
-          <rect x="36" y="102" width="208" height="44" rx="22" fill="#1b3f7d"/>
-          <text x="52" y="120" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,.6)">Available Credits</text>
-          <text x="52" y="136" font-family="sans-serif" font-weight="800" font-size="18" fill="#3dbfa0">3</text>
-          <text x="72" y="136" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,.5)">free today · 12 days left</text>
-          <!-- Search bar -->
-          <rect x="20" y="162" width="240" height="38" rx="19" fill="#132848"/>
-          <circle cx="44" cy="181" r="8" stroke="#3dbfa0" stroke-width="1.5" fill="none"/>
-          <line x1="50" y1="187" x2="55" y2="192" stroke="#3dbfa0" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="62" y="186" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,.4)">Software Engineer, Bangalore...</text>
-          <!-- Job card 1 -->
-          <rect x="20" y="214" width="240" height="72" rx="14" fill="#1b3f7d"/>
-          <rect x="36" y="228" width="28" height="28" rx="8" fill="#3dbfa0" opacity=".3"/>
-          <text x="40" y="247" font-family="sans-serif" font-size="14">💼</text>
-          <text x="74" y="234" font-family="sans-serif" font-weight="700" font-size="11" fill="white">Software Engineer</text>
-          <text x="74" y="248" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,.5)">Infosys · Bangalore</text>
-          <text x="74" y="262" font-family="sans-serif" font-size="9" fill="#3dbfa0">₹8–12 LPA</text>
-          <rect x="188" y="228" width="56" height="20" rx="10" fill="rgba(61,191,160,.25)"/>
-          <text x="198" y="242" font-family="sans-serif" font-weight="700" font-size="9" fill="#3dbfa0">87% Match</text>
-          <text x="188" y="274" font-family="sans-serif" font-size="8" fill="rgba(255,255,255,.35)">Posted today</text>
-          <!-- Job card 2 -->
-          <rect x="20" y="298" width="240" height="72" rx="14" fill="#132848" opacity=".8"/>
-          <text x="40" y="339" font-family="sans-serif" font-size="14">🏢</text>
-          <text x="74" y="318" font-family="sans-serif" font-weight="700" font-size="11" fill="white">Product Manager</text>
-          <text x="74" y="332" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,.5)">Razorpay · Pune</text>
-          <text x="74" y="346" font-family="sans-serif" font-size="9" fill="#3dbfa0">₹15–25 LPA</text>
-          <rect x="188" y="312" width="56" height="20" rx="10" fill="rgba(61,191,160,.15)"/>
-          <text x="198" y="326" font-family="sans-serif" font-weight="700" font-size="9" fill="#5dd4b8">74% Match</text>
-          <!-- Bottom nav -->
-          <rect x="20" y="500" width="240" height="48" rx="14" fill="#0e2550"/>
-          <text x="48" y="524" font-family="sans-serif" font-size="16">🏠</text>
-          <text x="96" y="524" font-family="sans-serif" font-size="16">🔍</text>
-          <text x="140" y="524" font-family="sans-serif" font-size="16">📁</text>
-          <text x="186" y="524" font-family="sans-serif" font-size="16">📄</text>
-          <text x="230" y="524" font-family="sans-serif" font-size="16">👤</text>
-          <!-- Active indicator -->
-          <rect x="36" y="540" width="28" height="3" rx="2" fill="#3dbfa0"/>
-          <!-- Side buttons -->
-          <rect x="0" y="160" width="4" height="36" rx="2" fill="#1b3f7d"/>
-          <rect x="0" y="206" width="4" height="28" rx="2" fill="#1b3f7d"/>
-          <rect x="276" y="176" width="4" height="48" rx="2" fill="#1b3f7d"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-</section>
+        <p style="color: rgba(255,255,255,0.2); font-size: 12px; margin-top: 24px;">&copy; 2026 OptaJob. All rights reserved.</p>
+    </footer>
 
-<!-- TRUST BAR -->
-<div style="height:3px;background:linear-gradient(90deg,transparent,#3dbfa0,#1b3f7d,#3dbfa0,transparent);"></div>
-<div class="trust-bar">
-  <div class="trust-inner">
-    <div class="trust-item"><span class="trust-dot"></span>✦ Real jobs from LinkedIn, Indeed &amp; Glassdoor</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ AI resume tailoring in seconds</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Find HR emails — 9 vendor integrations</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ 3 free credits every day for 14 days</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Salary filter: Under ₹3L to ₹25L+</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Android 14, 15 &amp; 16 supported</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ ATS score checker before you apply</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Made in India 🇮🇳 for India</div>
-    <!-- Duplicate for seamless loop -->
-    <div class="trust-item"><span class="trust-dot"></span>✦ Real jobs from LinkedIn, Indeed &amp; Glassdoor</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ AI resume tailoring in seconds</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Find HR emails — 9 vendor integrations</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ 3 free credits every day for 14 days</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Salary filter: Under ₹3L to ₹25L+</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Android 14, 15 &amp; 16 supported</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ ATS score checker before you apply</div>
-    <div class="trust-item"><span class="trust-dot"></span>✦ Made in India 🇮🇳 for India</div>
-  </div>
-</div>
-
-<!-- STATS BAR -->
-<div class="stats-bar">
-  <div class="container">
-    <div class="stats-inner">
-      <div class="stat-item fade-up">
-        <div class="stat-num" data-target="1200" data-suffix="+">1,200+</div>
-        <div class="stat-label">Beta Users</div>
-      </div>
-      <div class="stat-item fade-up">
-        <div class="stat-num" data-target="200" data-suffix="+">200+</div>
-        <div class="stat-label">Jobs Indexed Daily</div>
-      </div>
-      <div class="stat-item fade-up">
-        <div class="stat-num" data-target="14" data-suffix="">14</div>
-        <div class="stat-label">Days Free Credits</div>
-      </div>
-      <div class="stat-item fade-up">
-        <div class="stat-num" data-target="9" data-suffix="">9</div>
-        <div class="stat-label">Contact Finder Vendors</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FEATURES -->
-<section class="section" id="features">
-  <div class="container">
-    <div class="section-header fade-up">
-      <span class="badge badge-teal">✦ Features</span>
-      <h2 style="margin-top:12px">Everything you need to land your next job</h2>
-      <p>OptaJob combines AI-powered job matching, resume tailoring, and HR contact finding in one simple app.</p>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card fade-up">
-        <div class="feature-icon">🔍</div>
-        <div class="feature-title">Real Job Listings</div>
-        <div class="feature-desc">Live jobs from LinkedIn, Indeed, Glassdoor, and more — all searched in one tap. Never see an expired or fake listing again.</div>
-        <span class="feature-tag">→ 200+ new jobs indexed daily</span>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">✍️</div>
-        <div class="feature-title">AI Resume Tailoring</div>
-        <div class="feature-desc">Upload your resume once. For each job, the app rewrites it to match the job description and ATS keywords — instantly.</div>
-        <span class="feature-tag">→ ATS score shown before applying</span>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">📧</div>
-        <div class="feature-title">HR Contact Finder</div>
-        <div class="feature-desc">Find the real hiring manager's email address using 9 professional databases — Hunter.io, Apollo, Snov.io, and more.</div>
-        <span class="feature-tag">→ HIGH / MEDIUM / LOW confidence shown</span>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">💳</div>
-        <div class="feature-title">Simple Credit System</div>
-        <div class="feature-desc">3 free credits every day for your first 14 days. Each credit unlocks the full AI suite for one job — tailor + contact + cover letter.</div>
-        <span class="feature-tag">→ Earn more by watching short ads</span>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">📋</div>
-        <div class="feature-title">Application Tracker</div>
-        <div class="feature-desc">Track every application: Saved → Applied → Interview → Got Job. Get a follow-up reminder after 7 days automatically.</div>
-        <span class="feature-tag">→ Interview prep coming soon</span>
-      </div>
-      <div class="feature-card fade-up">
-        <div class="feature-icon">💰</div>
-        <div class="feature-title">Salary Intelligence</div>
-        <div class="feature-desc">Filter jobs by salary range: Under ₹3L, ₹3L–6L, ₹6L–12L, ₹12L–25L, ₹25L+. Sort by best match, newest, or highest salary.</div>
-        <span class="feature-tag">→ Real salary data, not estimates</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="section how-section" id="how-it-works">
-  <div class="container">
-    <div class="section-header fade-up">
-      <span class="badge badge-teal">✦ How It Works</span>
-      <h2 style="margin-top:12px">From download to offer in 3 steps</h2>
-      <p>OptaJob is designed to get you results fast — not just keep you scrolling forever.</p>
-    </div>
-    <div class="steps-row">
-      <div class="step-item fade-up">
-        <div class="step-num">1</div>
-        <h3 class="step-title">Search & Match</h3>
-        <p class="step-desc">Type your role and city. OptaJob pulls real jobs from multiple platforms and ranks them by how well they match your resume — not just keywords.</p>
-      </div>
-      <div class="step-item fade-up">
-        <div class="step-num">2</div>
-        <h3 class="step-title">Tailor & Verify</h3>
-        <p class="step-desc">Tap "AI Tailor" on any job. Your resume is rewritten for that specific role in seconds. Then find the HR manager's verified email address.</p>
-      </div>
-      <div class="step-item fade-up">
-        <div class="step-num">3</div>
-        <h3 class="step-title">Apply & Track</h3>
-        <p class="step-desc">Apply directly through the app. Track your application status — Applied, Interview, Offer. Get a follow-up reminder when it's time to nudge.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- TESTIMONIALS -->
-<section class="section">
-  <div class="container">
-    <div class="section-header fade-up">
-      <span class="badge badge-teal">✦ Testimonials</span>
-      <h2 style="margin-top:12px">Real results from real job seekers</h2>
-    </div>
-    <div class="testimonials-grid">
-      <div class="testimonial-card fade-up">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-text">"I had been applying blindly for 3 months. OptaJob's resume tailoring got me an interview at Razorpay in the first week. The HR email finder is genuinely magic."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar">P</div>
-          <div>
-            <div class="testimonial-name">Priya Sharma</div>
-            <div class="testimonial-role">Software Engineer · Hired at Razorpay</div>
-          </div>
-        </div>
-      </div>
-      <div class="testimonial-card fade-up">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-text">"The salary filter alone saved me hours. No more wasting time on jobs that don't mention salary. Got 4 interviews in 2 weeks using the tailored resumes."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar" style="background:linear-gradient(135deg,#1b3f7d,#3dbfa0)">R</div>
-          <div>
-            <div class="testimonial-name">Rahul Verma</div>
-            <div class="testimonial-role">Product Manager · Delhi</div>
-          </div>
-        </div>
-      </div>
-      <div class="testimonial-card fade-up">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-text">"As a fresher, I had no idea who to send my resume to. OptaJob found me the actual HR contact at 3 companies. One of them got back to me the same day."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar" style="background:linear-gradient(135deg,#7c3aed,#3dbfa0)">A</div>
-          <div>
-            <div class="testimonial-name">Anjali Patel</div>
-            <div class="testimonial-role">Fresh Graduate · Hired at TCS</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PRICING -->
-<section class="section" id="pricing" style="background:#f8fafc;">
-  <div class="container">
-    <div class="section-header fade-up">
-      <span class="badge badge-teal">✦ Pricing</span>
-      <h2 style="margin-top:12px">Start free. No credit card needed.</h2>
-      <p>3 free credits every day for your first 14 days. Earn more by watching short ads. Upgrade anytime.</p>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:900px;margin:0 auto;">
-      <div class="pricing-card fade-up" style="background:white;">
-        <div class="badge badge-teal" style="margin-bottom:20px;">Free</div>
-        <div class="pricing-price">₹0<span class="pricing-period">/month</span></div>
-        <ul class="pricing-list">
-          <li>3 credits/day for 14 days</li>
-          <li>Real job search</li>
-          <li>Basic resume upload</li>
-          <li>Earn credits via ads</li>
-          <li>Application tracker</li>
-        </ul>
-        <a href="#download" class="btn btn-ghost-navy btn-sm" style="width:100%;justify-content:center;">Download Free</a>
-      </div>
-      <div class="pricing-card featured fade-up">
-        <div class="badge badge-white" style="margin-bottom:20px;">Most Popular</div>
-        <div class="pricing-price" style="color:white;">₹199<span class="pricing-period">/month</span></div>
-        <ul class="pricing-list">
-          <li>30 credits/month</li>
-          <li>AI resume tailoring</li>
-          <li>HR contact finder</li>
-          <li>Cover letter generator</li>
-          <li>ATS score checker</li>
-          <li>Follow-up reminders</li>
-        </ul>
-        <a href="#download" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">Get Starter</a>
-      </div>
-      <div class="pricing-card fade-up" style="background:white;">
-        <div class="badge badge-navy" style="margin-bottom:20px;">Pro</div>
-        <div class="pricing-price">₹499<span class="pricing-period">/month</span></div>
-        <ul class="pricing-list">
-          <li>100 credits/month</li>
-          <li>All Starter features</li>
-          <li>Priority support</li>
-          <li>Multi-resume management</li>
-          <li>Unlimited saved jobs</li>
-          <li>Interview prep (coming soon)</li>
-        </ul>
-        <a href="#download" class="btn btn-navy btn-sm" style="width:100%;justify-content:center;">Get Pro</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FAQ -->
-<section class="section" id="faq">
-  <div class="container">
-    <div class="section-header fade-up">
-      <span class="badge badge-teal">✦ FAQ</span>
-      <h2 style="margin-top:12px">Frequently Asked Questions</h2>
-    </div>
-    <div style="max-width:720px;margin:0 auto;">
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">Is OptaJob really free to start?<span class="faq-icon">+</span></div>
-        <div class="faq-answer">Yes, completely free. You get 3 credits every day for your first 14 days — no credit card, no sign-up fee. Each credit gives you full AI features for one job (resume tailoring + HR contact + cover letter). You can also earn more credits for free by watching short 30-second ads.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">Are these real jobs or AI-generated ones?<span class="faq-icon">+</span></div>
-        <div class="faq-answer">Real jobs only. OptaJob connects to professional job APIs (JSearch, Adzuna, and others) that pull live listings from LinkedIn, Indeed, Glassdoor, and more. Every "Apply Now" link opens the real job application page at the company's website. We never show AI-invented job listings.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">How accurate is the HR contact finder?<span class="faq-icon">+</span></div>
-        <div class="faq-answer">OptaJob uses 9 professional email finder vendors including Hunter.io, Apollo.io, Snov.io, Skrapp.io, and more. Every result shows a confidence level — HIGH (verified by the vendor), MEDIUM (pattern match), or LOW (AI estimate). We always recommend verifying before sending a cold email.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">Is my resume data safe?<span class="faq-icon">+</span></div>
-        <div class="faq-answer">Your resume is stored securely on your device. It is only processed when you explicitly request AI tailoring for a specific job. We do not sell your data, share it with employers without your action, or use it for training AI models. See our full <a href="/privacy">Privacy Policy</a> for details.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">Which Android versions are supported?<span class="faq-icon">+</span></div>
-        <div class="faq-answer">OptaJob works on Android 8.0 (Oreo) and above. It is fully tested and optimised for Android 14, 15, and 16. We recommend keeping your Android version updated for the best experience.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">Will OptaJob be on iOS?<span class="faq-icon">+</span></div>
-        <div class="faq-answer">We are launching on Android first and will consider iOS based on demand. If you want an iOS version, use the contact form — enough interest and we will prioritise it.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- DOWNLOAD CTA -->
-<section class="cta-section" id="download">
-  <div class="container" style="position:relative;z-index:1;">
-    <div class="badge badge-white" style="margin-bottom:20px;display:inline-flex;">🚀 Available on Android</div>
-    <h2>Download OptaJob Free Today</h2>
-    <p>Join our growing community of Indian job seekers. Download free and start today.</p>
-    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:24px;">
-      <div class="download-badge">
-        <div class="download-badge-icon">▶</div>
-        <div>
-          <span class="download-badge-text-small">GET IT ON</span>
-          <span class="download-badge-text-big">Google Play</span>
-        </div>
-      </div>
-    </div>
-    <p style="color:rgba(255,255,255,.4);font-size:.85rem;">Coming soon to Apple App Store</p>
-  </div>
-  <!-- Background decoration -->
-  <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(61,191,160,.15) 0%,transparent 70%);bottom:-200px;left:-100px;pointer-events:none;"></div>
-  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(93,212,184,.1) 0%,transparent 70%);top:-100px;right:100px;pointer-events:none;"></div>
-</section>
-
-<!-- FOOTER -->
-<footer class="footer">
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <div class="nav-logo">
-          <img src="/assets/images/logo_transparent.png" alt="OptaJob logo" style="width:38px;height:38px;object-fit:contain;flex-shrink:0;">
-          <span style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:white;">opta<span style="color:#3dbfa0">job</span></span>
-        </div>
-        <p>India's AI-powered job search platform. Find jobs, tailor resumes, and contact HR — all in one tap. Made with ❤️ by Udit Tandon.</p>
-        <div style="display:flex;gap:12px;margin-top:20px;">
-          <a href="https://linkedin.com" style="color:rgba(255,255,255,.5);font-size:1.2rem;transition:color .2s;" onmouseover="this.style.color='#3dbfa0'" onmouseout="this.style.color='rgba(255,255,255,.5)'">in</a>
-          <a href="https://twitter.com" style="color:rgba(255,255,255,.5);font-size:1.2rem;transition:color .2s;" onmouseover="this.style.color='#3dbfa0'" onmouseout="this.style.color='rgba(255,255,255,.5)'">𝕏</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <a href="/#features">Features</a>
-        <a href="/#how-it-works">How it Works</a>
-        <a href="/#pricing">Pricing</a>
-        <a href="#download">Download</a>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <a href="/about">About Us</a>
-        <a href="/#faq">FAQ</a>
-        <a href="/contact">Contact</a>
-        <a href="/admin">Admin Login</a>
-      </div>
-      <div class="footer-col">
-        <h4>Legal</h4>
-        <a href="/privacy">Privacy Policy</a>
-        <a href="/terms">Terms of Service</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2025 OptaJob · Made by Udit Tandon · All rights reserved</p>
-      <div class="footer-bottom-links">
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/contact"><a href="/contact" title="Contact Us"><span data-email="b3B0YWpvYi5zdXBAZ21haWwuY29t">optajob&#46;sup&#64;gmail&#46;com</span></a></a>
-      </div>
-    </div>
-  </div>
-</footer>
-
-<script src="/assets/js/main.js"></script>
-<script>
-function toggleFaq(el) {
-  const item = el.closest('.faq-item');
-  item.classList.toggle('open');
-}
-// Add CSS for particle animation
-const style = document.createElement('style');
-style.textContent = '.particle{position:absolute;width:3px;height:3px;border-radius:50%;background:#5dd4b8;opacity:0;animation:particleFloat 8s ease-in-out infinite;}@keyframes particleFloat{0%{opacity:0;transform:translateY(100vh) scale(0);}10%{opacity:.6;}90%{opacity:.3;}100%{opacity:0;transform:translateY(-20vh) scale(1.5);}}';
-document.head.appendChild(style);
-</script>
 </body>
 </html>
