@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>OptaJob Admin</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #050b14;
+            --bg-card: rgba(14, 37, 80, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-teal: #3dbfa0;
+            --accent-indigo: #6366f1;
+            --border-glow: rgba(61, 191, 160, 0.3);
+            --accent-red: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+                              radial-gradient(circle at 85% 30%, rgba(61, 191, 160, 0.08), transparent 25%);
+        }
+
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-align: center; margin-bottom: 32px; }
+        .logo span { color: var(--accent-teal); }
+
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .panel-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+        .panel-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+
+        label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: var(--accent-teal); }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-teal), #2b997c);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(61, 191, 160, 0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .error-msg {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .error-msg.show { display: block; }
+
+        .dashboard-placeholder {
+            display: none;
+            text-align: center;
+        }
+        .dashboard-placeholder.show { display: block; }
+        .dashboard-placeholder h2 { font-size: 18px; font-weight: 800; color: var(--accent-teal); margin-bottom: 8px; }
+        .dashboard-placeholder p { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div style="width: 100%; max-width: 400px;">
+        <div class="logo">Opta<span>Job</span> <span style="color: var(--text-muted); font-weight: 600; font-size: 16px;">Admin</span></div>
+
+        <div class="glass-panel">
+            <div id="loginView">
+                <div class="panel-title">Admin Sign In</div>
+                <div class="panel-sub">Restricted access. Authorized personnel only.</div>
+
+                <div id="errorMsg" class="error-msg"></div>
+
+                <form id="loginForm">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" autocomplete="username" required>
+
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+
+                    <button type="submit" class="btn-primary" id="submitBtn">Sign In</button>
+                </form>
+            </div>
+
+            <div id="dashboardPlaceholder" class="dashboard-placeholder">
+                <h2>Access Granted</h2>
+                <p>Dashboard coming next.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+        // Same project the mobile app uses for auth/users (optajob-db) — mirrors
+        // mainDbConfig in optajob-app/firebaseConfig.js.
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjLKuRraT7ux_SKA00X-QKrQo9ei4Qo3A",
+            authDomain: "optajob-db.firebaseapp.com",
+            projectId: "optajob-db",
+            storageBucket: "optajob-db.firebasestorage.app",
+            messagingSenderId: "165152652967",
+            appId: "1:165152652967:web:b45cb6213a22888722a582"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const loginForm = document.getElementById('loginForm');
+        const loginView = document.getElementById('loginView');
+        const dashboardPlaceholder = document.getElementById('dashboardPlaceholder');
+        const errorMsg = document.getElementById('errorMsg');
+        const submitBtn = document.getElementById('submitBtn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('show');
+            errorMsg.textContent = '';
+        }
+
+        function clearLoginForm() {
+            loginForm.reset();
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists() && userDocSnap.data().isAdmin === true) {
+                    loginView.style.display = 'none';
+                    dashboardPlaceholder.classList.add('show');
+                } else {
+                    await signOut(auth);
+                    showError('Access Denied — Admin Access Only');
+                    clearLoginForm();
+                }
+            } catch (error) {
+                await signOut(auth).catch(() => {});
+                showError('Access Denied — Admin Access Only');
+                clearLoginForm();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            }
+        });
+    </script>
+
+</body>
+</html>
