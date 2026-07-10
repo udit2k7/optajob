@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>OptaJob Testing</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #050b14;
+            --bg-card: rgba(14, 37, 80, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-teal: #3dbfa0;
+            --accent-indigo: #6366f1;
+            --border-glow: rgba(61, 191, 160, 0.3);
+            --accent-red: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+                              radial-gradient(circle at 85% 30%, rgba(61, 191, 160, 0.08), transparent 25%);
+        }
+
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-align: center; margin-bottom: 32px; }
+        .logo span { color: var(--accent-teal); }
+
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .panel-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+        .panel-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.5; }
+
+        label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; margin-top: 18px; }
+        label:first-of-type { margin-top: 0; }
+
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="email"]:focus { border-color: var(--accent-teal); }
+
+        .friend-email-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .friend-email-row input { flex: 1; }
+
+        .add-another-btn {
+            background: none;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: var(--accent-teal);
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .add-another-btn:hover { border-color: var(--accent-teal); background: rgba(61, 191, 160, 0.05); }
+        .add-another-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-teal), #2b997c);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 28px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(61, 191, 160, 0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .error-msg {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .error-msg.show { display: block; }
+
+        .success-view {
+            display: none;
+            text-align: center;
+        }
+        .success-view.show { display: block; }
+        .success-view h2 { font-size: 20px; font-weight: 800; color: var(--accent-teal); margin-bottom: 10px; }
+        .success-view p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Honeypot: visually hidden from real users, still present for bots that
+           fill every field programmatically. */
+        .hp-field {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="width: 100%; max-width: 440px;">
+        <div class="logo">Opta<span>Job</span></div>
+
+        <div class="glass-panel">
+            <div id="formView">
+                <div class="panel-title" id="panelTitle"></div>
+                <div class="panel-sub" id="panelSub"></div>
+
+                <div id="errorMsg" class="error-msg"></div>
+
+                <form id="testerForm" novalidate>
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required autocomplete="name">
+
+                    <label for="ownEmail">Your email</label>
+                    <input type="email" id="ownEmail" name="ownEmail" required autocomplete="email">
+
+                    <div id="friendEmailBlock">
+                        <label id="friendEmailLabel">Your friend's email(s)</label>
+                        <div id="friendEmailRows">
+                            <div class="friend-email-row">
+                                <input type="email" class="friend-email-input" autocomplete="off">
+                            </div>
+                        </div>
+                        <button type="button" class="add-another-btn" id="addAnotherBtn">+ Add another</button>
+                    </div>
+
+                    <!-- Honeypot: real users never see or fill this. Any bot that
+                         fills every input on the page will populate it, and we
+                         silently drop the submission without writing to Firestore. -->
+                    <div class="hp-field" aria-hidden="true">
+                        <label for="website">Website</label>
+                        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="submitBtn">Submit</button>
+                </form>
+            </div>
+
+            <div id="successView" class="success-view">
+                <h2>Thank You</h2>
+                <p id="successMsg"></p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+        // Same project the mobile app and admin panel use (optajob-db) —
+        // mirrors mainDbConfig in optajob-app/firebaseConfig.js.
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjLKuRraT7ux_SKA00X-QKrQo9ei4Qo3A",
+            authDomain: "optajob-db.firebaseapp.com",
+            projectId: "optajob-db",
+            storageBucket: "optajob-db.firebasestorage.app",
+            messagingSenderId: "165152652967",
+            appId: "1:165152652967:web:b45cb6213a22888722a582"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+        const MAX_FRIEND_EMAILS = 5;
+
+        const source = new URLSearchParams(window.location.search).get('source') === 'getapp' ? 'getapp' : 'referral';
+
+        const panelTitle = document.getElementById('panelTitle');
+        const panelSub = document.getElementById('panelSub');
+        const friendEmailBlock = document.getElementById('friendEmailBlock');
+        const friendEmailRows = document.getElementById('friendEmailRows');
+        const addAnotherBtn = document.getElementById('addAnotherBtn');
+        const testerForm = document.getElementById('testerForm');
+        const errorMsg = document.getElementById('errorMsg');
+        const submitBtn = document.getElementById('submitBtn');
+        const formView = document.getElementById('formView');
+        const successView = document.getElementById('successView');
+        const successMsg = document.getElementById('successMsg');
+        const nameInput = document.getElementById('name');
+        const ownEmailInput = document.getElementById('ownEmail');
+        const websiteInput = document.getElementById('website');
+
+        const COPY = {
+            referral: {
+                title: 'Help Udit Find Testers',
+                sub: "Know someone with Android who'd be a great fit? Submit their email below.",
+                success: "Thanks! We'll be in touch with your friend soon."
+            },
+            getapp: {
+                title: 'Join the OptaJob Beta',
+                sub: "OptaJob isn't on the Play Store yet — enter your email below and we'll add you to our closed testing program as soon as a spot opens up.",
+                success: "Thanks! We'll email you as soon as a testing spot opens up."
+            }
+        };
+
+        panelTitle.textContent = COPY[source].title;
+        panelSub.textContent = COPY[source].sub;
+
+        if (source === 'getapp') {
+            friendEmailBlock.style.display = 'none';
+        }
+
+        addAnotherBtn.addEventListener('click', () => {
+            const currentCount = friendEmailRows.querySelectorAll('.friend-email-input').length;
+            if (currentCount >= MAX_FRIEND_EMAILS) return;
+
+            const row = document.createElement('div');
+            row.className = 'friend-email-row';
+            row.innerHTML = '<input type="email" class="friend-email-input" autocomplete="off">';
+            friendEmailRows.appendChild(row);
+
+            if (friendEmailRows.querySelectorAll('.friend-email-input').length >= MAX_FRIEND_EMAILS) {
+                addAnotherBtn.disabled = true;
+            }
+        });
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('show');
+            errorMsg.textContent = '';
+        }
+
+        testerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            // Honeypot tripped — silently pretend success without writing anything.
+            if (websiteInput.value.trim() !== '') {
+                formView.style.display = 'none';
+                successMsg.textContent = COPY[source].success;
+                successView.classList.add('show');
+                return;
+            }
+
+            const name = nameInput.value.trim();
+            const ownEmail = ownEmailInput.value.trim();
+
+            if (!name) {
+                showError('Please enter your name.');
+                return;
+            }
+            if (!EMAIL_REGEX.test(ownEmail)) {
+                showError('Please enter a valid email address for yourself.');
+                return;
+            }
+
+            let emails;
+            if (source === 'getapp') {
+                emails = [ownEmail];
+            } else {
+                const friendEmails = Array.from(document.querySelectorAll('.friend-email-input'))
+                    .map(input => input.value.trim())
+                    .filter(value => value !== '');
+
+                if (friendEmails.length === 0) {
+                    showError("Please enter at least one friend's email.");
+                    return;
+                }
+                const invalidEmail = friendEmails.find(email => !EMAIL_REGEX.test(email));
+                if (invalidEmail) {
+                    showError(`"${invalidEmail}" doesn't look like a valid email address.`);
+                    return;
+                }
+                if (friendEmails.length > MAX_FRIEND_EMAILS) {
+                    showError(`Please enter at most ${MAX_FRIEND_EMAILS} emails.`);
+                    return;
+                }
+                emails = friendEmails;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                await addDoc(collection(db, 'tester_referrals'), {
+                    emails: emails,
+                    referredByEmail: ownEmail,
+                    referrerName: name,
+                    submittedAt: new Date().toISOString(),
+                    status: 'pending'
+                });
+
+                formView.style.display = 'none';
+                successMsg.textContent = COPY[source].success;
+                successView.classList.add('show');
+            } catch (error) {
+                showError('Something went wrong submitting the form. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        });
+    </script>
+
+</body>
+</html>
