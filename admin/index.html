@@ -18,6 +18,7 @@
             --accent-indigo: #6366f1;
             --border-glow: rgba(61, 191, 160, 0.3);
             --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,6 +36,9 @@
                               radial-gradient(circle at 85% 30%, rgba(61, 191, 160, 0.08), transparent 25%);
         }
 
+        #pageWrapper { width: 100%; max-width: 400px; transition: max-width 0.2s; }
+        #pageWrapper.wide { max-width: 900px; }
+
         .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-align: center; margin-bottom: 32px; }
         .logo span { color: var(--accent-teal); }
 
@@ -46,7 +50,6 @@
             border-radius: 16px;
             padding: 40px;
             width: 100%;
-            max-width: 400px;
         }
 
         .panel-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
@@ -54,7 +57,7 @@
 
         label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
 
-        input {
+        input[type="email"], input[type="password"], input[type="text"] {
             width: 100%;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -97,18 +100,104 @@
         }
         .error-msg.show { display: block; }
 
-        .dashboard-placeholder {
-            display: none;
-            text-align: center;
+        /* ---- Dashboard ---- */
+        .dashboard-view { display: none; }
+        .dashboard-view.show { display: block; }
+
+        .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
         }
-        .dashboard-placeholder.show { display: block; }
-        .dashboard-placeholder h2 { font-size: 18px; font-weight: 800; color: var(--accent-teal); margin-bottom: 8px; }
-        .dashboard-placeholder p { font-size: 13px; color: var(--text-muted); }
+
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .filter-tab {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .filter-tab.active { background: var(--accent-teal); border-color: var(--accent-teal); color: #05261f; }
+
+        .referral-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; max-height: 480px; overflow-y: auto; }
+        .referral-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .referral-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+        .referral-name { font-size: 14px; font-weight: 800; }
+        .referral-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .referral-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+        .status-badge { display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 8px; border-radius: 6px; margin-bottom: 10px; }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+        .status-added { background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); }
+        .status-activated { background: rgba(61, 191, 160, 0.15); color: var(--accent-teal); }
+
+        .friend-emails-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .friend-emails-list { font-size: 13px; color: var(--text-main); line-height: 1.6; margin-bottom: 12px; }
+
+        .btn-mark-added {
+            background: var(--accent-indigo);
+            color: #fff;
+            border: none;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-mark-added:hover { opacity: 0.9; }
+
+        .empty-state { text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px 0; }
+
+        .settings-panel {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 24px;
+        }
+        .settings-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 18px; }
+        .settings-row { display: flex; gap: 10px; align-items: flex-start; }
+        .settings-row input { flex: 1; }
+        .btn-save-small {
+            background: var(--accent-teal);
+            color: #05261f;
+            border: none;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            height: 46px;
+        }
+        .settings-saved-msg { font-size: 12px; color: var(--accent-teal); margin-top: -14px; margin-bottom: 16px; display: none; }
+        .settings-saved-msg.show { display: block; }
+
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+        .toggle-sub { font-size: 12px; color: var(--text-muted); text-transform: none; font-weight: 500; letter-spacing: normal; }
+
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; margin: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: rgba(255,255,255,0.15); transition: 0.2s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; transition: 0.2s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-teal); }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
 
-    <div style="width: 100%; max-width: 400px;">
+    <div id="pageWrapper">
         <div class="logo">Opta<span>Job</span> <span style="color: var(--text-muted); font-weight: 600; font-size: 16px;">Admin</span></div>
 
         <div class="glass-panel">
@@ -129,9 +218,46 @@
                 </form>
             </div>
 
-            <div id="dashboardPlaceholder" class="dashboard-placeholder">
-                <h2>Access Granted</h2>
-                <p>Dashboard coming next.</p>
+            <div id="dashboardView" class="dashboard-view">
+                <div class="dash-header">
+                    <div>
+                        <div class="panel-title" style="margin-bottom: 2px;">Tester Referrals</div>
+                        <div class="panel-sub" style="margin-bottom: 0;">Review and manage tester sign-ups</div>
+                    </div>
+                    <button class="btn-logout" id="logoutBtn">Log Out</button>
+                </div>
+
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="pending">Pending</button>
+                    <button class="filter-tab" data-filter="added_to_console">Added to Console</button>
+                    <button class="filter-tab" data-filter="activated">Activated</button>
+                </div>
+
+                <div id="referralList" class="referral-list">
+                    <div class="empty-state">Loading…</div>
+                </div>
+
+                <div class="settings-panel">
+                    <div class="settings-title">Settings</div>
+
+                    <label for="optInUrlInput">Play Console Opt-In URL</label>
+                    <div class="settings-row">
+                        <input type="text" id="optInUrlInput" placeholder="https://play.google.com/apps/testing/...">
+                        <button class="btn-save-small" id="saveOptInUrlBtn">Save</button>
+                    </div>
+                    <div class="settings-saved-msg" id="optInSavedMsg">Saved.</div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <label style="margin-bottom: 2px;">Tester Recruitment Banner</label>
+                            <div class="toggle-sub">Show the in-app "help find testers" banner</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="bannerToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -139,10 +265,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-        // Same project the mobile app uses for auth/users (optajob-db) — mirrors
-        // mainDbConfig in optajob-app/firebaseConfig.js.
         const firebaseConfig = {
             apiKey: "AIzaSyDjLKuRraT7ux_SKA00X-QKrQo9ei4Qo3A",
             authDomain: "optajob-db.firebaseapp.com",
@@ -158,11 +282,19 @@
 
         const loginForm = document.getElementById('loginForm');
         const loginView = document.getElementById('loginView');
-        const dashboardPlaceholder = document.getElementById('dashboardPlaceholder');
+        const dashboardView = document.getElementById('dashboardView');
+        const pageWrapper = document.getElementById('pageWrapper');
         const errorMsg = document.getElementById('errorMsg');
         const submitBtn = document.getElementById('submitBtn');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const referralList = document.getElementById('referralList');
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const optInUrlInput = document.getElementById('optInUrlInput');
+        const saveOptInUrlBtn = document.getElementById('saveOptInUrlBtn');
+        const optInSavedMsg = document.getElementById('optInSavedMsg');
+        const bannerToggle = document.getElementById('bannerToggle');
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -177,6 +309,162 @@
         function clearLoginForm() {
             loginForm.reset();
         }
+
+        let allReferrals = [];
+        let currentFilter = 'pending';
+        let referralsUnsubscribe = null;
+
+        function formatDate(isoString) {
+            if (!isoString) return '—';
+            const d = new Date(isoString);
+            if (isNaN(d.getTime())) return isoString;
+            return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+        }
+
+        function matchesFilter(referral, filter) {
+            if (filter === 'pending') return referral.status === 'pending';
+            if (filter === 'added_to_console') return referral.status === 'added_to_console' && !referral.activationEmailsSentAt;
+            if (filter === 'activated') return referral.status === 'added_to_console' && !!referral.activationEmailsSentAt;
+            return false;
+        }
+
+        function statusBadge(referral) {
+            if (referral.status === 'pending') return '<span class="status-badge status-pending">Pending</span>';
+            if (referral.status === 'added_to_console' && referral.activationEmailsSentAt) return '<span class="status-badge status-activated">Activated</span>';
+            if (referral.status === 'added_to_console') return '<span class="status-badge status-added">Added to Console</span>';
+            return '<span class="status-badge status-pending">' + (referral.status || 'Unknown') + '</span>';
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : String(str);
+            return div.innerHTML;
+        }
+
+        function renderReferrals() {
+            const filtered = allReferrals.filter(r => matchesFilter(r, currentFilter));
+
+            if (filtered.length === 0) {
+                referralList.innerHTML = '<div class="empty-state">No referrals in this category.</div>';
+                return;
+            }
+
+            referralList.innerHTML = filtered.map(r => {
+                const emails = Array.isArray(r.emails) ? r.emails : [];
+                const emailsHtml = emails.map(e => escapeHtml(e)).join('<br>') || '—';
+                const markBtn = r.status === 'pending'
+                    ? '<button class="btn-mark-added" data-id="' + escapeHtml(r.id) + '">Mark as Added to Console</button>'
+                    : '';
+
+                return '<div class="referral-card">' +
+                        '<div class="referral-card-top">' +
+                            '<div>' +
+                                '<div class="referral-name">' + escapeHtml(r.referrerName || 'Unnamed') + '</div>' +
+                                '<div class="referral-email">' + escapeHtml(r.referredByEmail || '') + '</div>' +
+                            '</div>' +
+                            '<div class="referral-date">' + escapeHtml(formatDate(r.submittedAt)) + '</div>' +
+                        '</div>' +
+                        statusBadge(r) +
+                        '<div class="friend-emails-label">Friend Email(s)</div>' +
+                        '<div class="friend-emails-list">' + emailsHtml + '</div>' +
+                        markBtn +
+                    '</div>';
+            }).join('');
+
+            referralList.querySelectorAll('.btn-mark-added').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    btn.disabled = true;
+                    btn.textContent = 'Updating...';
+                    try {
+                        await updateDoc(doc(db, 'tester_referrals', id), { status: 'added_to_console' });
+                    } catch (error) {
+                        alert('Failed to update: ' + error.message);
+                        btn.disabled = false;
+                        btn.textContent = 'Mark as Added to Console';
+                    }
+                });
+            });
+        }
+
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentFilter = tab.getAttribute('data-filter');
+                renderReferrals();
+            });
+        });
+
+        function startReferralsListener() {
+            const q = query(collection(db, 'tester_referrals'), orderBy('submittedAt', 'desc'));
+            referralsUnsubscribe = onSnapshot(q, (snapshot) => {
+                allReferrals = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderReferrals();
+            }, (error) => {
+                referralList.innerHTML = '<div class="empty-state">Failed to load referrals: ' + escapeHtml(error.message) + '</div>';
+            });
+        }
+
+        async function loadSettings() {
+            try {
+                const optInSnap = await getDoc(doc(db, 'app_config', 'tester_program'));
+                optInUrlInput.value = (optInSnap.exists() && optInSnap.data().optInUrl) || '';
+            } catch (error) {
+                console.error('Failed to load optInUrl:', error.message);
+            }
+
+            try {
+                const bannerSnap = await getDoc(doc(db, 'app_config', 'tester_recruitment'));
+                bannerToggle.checked = bannerSnap.exists() && bannerSnap.data().enabled === true;
+            } catch (error) {
+                console.error('Failed to load banner config:', error.message);
+            }
+        }
+
+        saveOptInUrlBtn.addEventListener('click', async () => {
+            saveOptInUrlBtn.disabled = true;
+            saveOptInUrlBtn.textContent = 'Saving...';
+            optInSavedMsg.classList.remove('show');
+            try {
+                await setDoc(doc(db, 'app_config', 'tester_program'), { optInUrl: optInUrlInput.value.trim() }, { merge: true });
+                optInSavedMsg.classList.add('show');
+                setTimeout(() => optInSavedMsg.classList.remove('show'), 2500);
+            } catch (error) {
+                alert('Failed to save: ' + error.message);
+            } finally {
+                saveOptInUrlBtn.disabled = false;
+                saveOptInUrlBtn.textContent = 'Save';
+            }
+        });
+
+        bannerToggle.addEventListener('change', async () => {
+            const newValue = bannerToggle.checked;
+            bannerToggle.disabled = true;
+            try {
+                await setDoc(doc(db, 'app_config', 'tester_recruitment'), { enabled: newValue }, { merge: true });
+            } catch (error) {
+                alert('Failed to update: ' + error.message);
+                bannerToggle.checked = !newValue;
+            } finally {
+                bannerToggle.disabled = false;
+            }
+        });
+
+        function initDashboard() {
+            pageWrapper.classList.add('wide');
+            startReferralsListener();
+            loadSettings();
+        }
+
+        logoutBtn.addEventListener('click', async () => {
+            if (referralsUnsubscribe) referralsUnsubscribe();
+            await signOut(auth).catch(() => {});
+            dashboardView.classList.remove('show');
+            pageWrapper.classList.remove('wide');
+            loginView.style.display = 'block';
+            clearLoginForm();
+        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -196,7 +484,8 @@
 
                 if (userDocSnap.exists() && userDocSnap.data().isAdmin === true) {
                     loginView.style.display = 'none';
-                    dashboardPlaceholder.classList.add('show');
+                    dashboardView.classList.add('show');
+                    initDashboard();
                 } else {
                     await signOut(auth);
                     showError('Access Denied — Admin Access Only');
