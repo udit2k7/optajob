@@ -312,6 +312,98 @@
             padding: 16px;
             border-radius: 8px;
         }
+
+        /* ---- Users section ---- */
+        .user-select-all { display: inline-block; margin-bottom: 12px; cursor: pointer; color: var(--accent-teal); font-weight: 700; font-size: 13px; }
+        .user-select-all:hover { opacity: 0.85; }
+
+        .user-bulk-bar {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .user-bulk-head { font-size: 13px; font-weight: 800; color: var(--text-main); }
+        .user-bulk-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .user-bulk-label { font-size: 12px; font-weight: 700; color: var(--text-muted); width: 84px; }
+        .user-bulk-input {
+            width: 90px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-family: inherit;
+            text-align: center;
+            outline: none;
+        }
+        .user-bulk-input:focus { border-color: var(--accent-teal); }
+
+        .btn-bulk {
+            background: var(--accent-indigo);
+            color: #fff;
+            border: none;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 9px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-bulk:hover { opacity: 0.9; }
+        .btn-bulk:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-bulk-suspend { background: var(--accent-red); flex: 1; }
+        .btn-bulk-reinstate { background: #16a34a; flex: 1; }
+
+        .user-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        .user-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid var(--text-muted);
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+            color: #05261f;
+            font-size: 13px;
+            font-weight: 900;
+        }
+        .user-checkbox.checked { background: var(--accent-teal); border-color: var(--accent-teal); }
+        .user-info { flex: 1; min-width: 0; }
+        .user-name { font-size: 14px; font-weight: 800; color: var(--text-main); }
+        .user-email { font-size: 12px; color: var(--text-muted); margin: 2px 0 6px; }
+        .user-stat { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .user-stat b { font-weight: 800; color: var(--accent-teal); }
+        .badge-suspended { display: inline-block; background: rgba(239, 68, 68, 0.15); color: var(--accent-red); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.5px; vertical-align: middle; }
+
+        .unverified-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+        }
+        .badge-unverified { flex-shrink: 0; background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -371,7 +463,16 @@
                 </section>
 
                 <section id="section-users" class="content-section">
-                    <div class="empty-state">User management — coming in next update.</div>
+                    <div class="stats-header">
+                        <div>
+                            <div class="panel-title" style="margin-bottom: 2px;">Manage Users</div>
+                            <div class="panel-sub" style="margin-bottom: 0;">One-time snapshot — verified and pending accounts</div>
+                        </div>
+                        <button class="btn-refresh" id="refreshUsersBtn">Refresh</button>
+                    </div>
+                    <div id="usersBody">
+                        <div class="empty-state">Loading…</div>
+                    </div>
                 </section>
 
                 <section id="section-admins" class="content-section">
@@ -429,7 +530,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjLKuRraT7ux_SKA00X-QKrQo9ei4Qo3A",
@@ -443,6 +544,8 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        const SUPER_ADMIN_UID = "DUQfWJFdZth8EUCIMg2RZwhbPBj2";
 
         const loginForm = document.getElementById('loginForm');
         const loginView = document.getElementById('loginView');
@@ -464,6 +567,8 @@
         const contentSections = document.querySelectorAll('.content-section');
         const statsBody = document.getElementById('statsBody');
         const refreshStatsBtn = document.getElementById('refreshStatsBtn');
+        const usersBody = document.getElementById('usersBody');
+        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -483,6 +588,7 @@
             navItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-section') === name));
             contentSections.forEach(section => section.classList.toggle('visible', section.id === 'section-' + name));
             if (name === 'stats') loadStats();
+            if (name === 'users') loadUsers();
         }
 
         navItems.forEach(item => {
@@ -608,6 +714,230 @@
         }
 
         refreshStatsBtn.addEventListener('click', loadStats);
+
+        // ---- Users section ----
+        let allUsers = [];
+        let verifiedUsers = [];
+        let unverifiedUsers = [];
+        let userSearch = '';
+        const selectedUids = new Set();
+        let usersShellBuilt = false;
+        let verifiedList, unverifiedList, verifiedHeading, unverifiedHeading, userSelectAllRow, userBulkBar, userBulkHead, userSearchInput;
+
+        function getFilteredVerified() {
+            const q = userSearch.trim().toLowerCase();
+            if (!q) return verifiedUsers;
+            return verifiedUsers.filter(u => (u.fullName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+        }
+
+        function buildUsersShell() {
+            usersBody.innerHTML =
+                '<input type="text" id="userSearchInput" placeholder="Search by name or email...">' +
+                '<div class="user-select-all" id="userSelectAllRow"></div>' +
+                '<div class="user-bulk-bar" id="userBulkBar" style="display:none;">' +
+                    '<div class="user-bulk-head" id="userBulkHead"></div>' +
+                    '<div class="user-bulk-row">' +
+                        '<span class="user-bulk-label">Bonus Days</span>' +
+                        '<input type="number" class="user-bulk-input" id="bonusDaysInput" value="30">' +
+                        '<button class="btn-bulk" id="applyBonusBtn">Apply Bonus Days</button>' +
+                    '</div>' +
+                    '<div class="user-bulk-row">' +
+                        '<span class="user-bulk-label">Credits</span>' +
+                        '<input type="number" class="user-bulk-input" id="creditsInput" value="5">' +
+                        '<button class="btn-bulk" id="adjustCreditsBtn">Adjust Credits</button>' +
+                    '</div>' +
+                    '<div class="user-bulk-row">' +
+                        '<button class="btn-bulk btn-bulk-suspend" id="suspendSelBtn">Suspend Selected</button>' +
+                        '<button class="btn-bulk btn-bulk-reinstate" id="reinstateSelBtn">Reinstate Selected</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="stat-group-title first" id="verifiedHeading"></div>' +
+                '<div id="verifiedList"></div>' +
+                '<div class="stat-group-title" id="unverifiedHeading"></div>' +
+                '<div id="unverifiedList"></div>';
+
+            userSearchInput = document.getElementById('userSearchInput');
+            userSelectAllRow = document.getElementById('userSelectAllRow');
+            userBulkBar = document.getElementById('userBulkBar');
+            userBulkHead = document.getElementById('userBulkHead');
+            verifiedHeading = document.getElementById('verifiedHeading');
+            verifiedList = document.getElementById('verifiedList');
+            unverifiedHeading = document.getElementById('unverifiedHeading');
+            unverifiedList = document.getElementById('unverifiedList');
+
+            userSearchInput.addEventListener('input', () => {
+                userSearch = userSearchInput.value;
+                renderUsersList();
+            });
+
+            userSelectAllRow.addEventListener('click', () => {
+                const filtered = getFilteredVerified();
+                const allSel = filtered.length > 0 && filtered.every(u => selectedUids.has(u.uid));
+                if (allSel) {
+                    filtered.forEach(u => selectedUids.delete(u.uid));
+                } else {
+                    filtered.forEach(u => selectedUids.add(u.uid));
+                }
+                renderUsersList();
+            });
+
+            verifiedList.addEventListener('click', (e) => {
+                const cb = e.target.closest('.user-checkbox');
+                if (!cb) return;
+                const uid = cb.getAttribute('data-uid');
+                if (selectedUids.has(uid)) selectedUids.delete(uid); else selectedUids.add(uid);
+                renderUsersList();
+            });
+
+            document.getElementById('applyBonusBtn').addEventListener('click', applyBonusDays);
+            document.getElementById('adjustCreditsBtn').addEventListener('click', adjustCredits);
+            document.getElementById('suspendSelBtn').addEventListener('click', () => bulkSuspend('suspended'));
+            document.getElementById('reinstateSelBtn').addEventListener('click', () => bulkSuspend('active'));
+        }
+
+        function renderUsersList() {
+            const filtered = getFilteredVerified();
+            const allSel = filtered.length > 0 && filtered.every(u => selectedUids.has(u.uid));
+
+            userSelectAllRow.textContent = (allSel ? 'Deselect All' : 'Select All') + ' (' + filtered.length + ')';
+
+            if (selectedUids.size > 0) {
+                userBulkBar.style.display = 'flex';
+                userBulkHead.textContent = selectedUids.size + ' selected';
+            } else {
+                userBulkBar.style.display = 'none';
+            }
+
+            verifiedHeading.textContent = 'Verified Users (' + filtered.length + ')';
+
+            if (filtered.length === 0) {
+                verifiedList.innerHTML = '<div class="empty-state">No matching verified users.</div>';
+            } else {
+                verifiedList.innerHTML = filtered.map(u => {
+                    const checked = selectedUids.has(u.uid);
+                    const suspended = u.status === 'suspended' ? '<span class="badge-suspended">SUSPENDED</span>' : '';
+                    return '<div class="user-card">' +
+                            '<div class="user-checkbox' + (checked ? ' checked' : '') + '" data-uid="' + escapeHtml(u.uid) + '">' + (checked ? '✓' : '') + '</div>' +
+                            '<div class="user-info">' +
+                                '<div class="user-name">' + escapeHtml(u.fullName || 'Unnamed') + suspended + '</div>' +
+                                '<div class="user-email">' + escapeHtml(u.email || 'No email') + '</div>' +
+                                '<div class="user-stat">Credits: <b>' + escapeHtml(String(u.credits || 0)) + '</b></div>' +
+                                '<div class="user-stat">Bonus days: <b>' + escapeHtml(String(u.bonusDays ?? 30)) + '</b></div>' +
+                            '</div>' +
+                        '</div>';
+                }).join('');
+            }
+
+            unverifiedHeading.textContent = 'Unverified — Pending (' + unverifiedUsers.length + ')';
+            if (unverifiedUsers.length === 0) {
+                unverifiedList.innerHTML = '<div class="empty-state">No unverified accounts.</div>';
+            } else {
+                unverifiedList.innerHTML = unverifiedUsers.map(u =>
+                    '<div class="unverified-card">' +
+                        '<div class="user-info">' +
+                            '<div class="user-name">' + escapeHtml(u.fullName || 'Unnamed') + '</div>' +
+                            '<div class="user-email">' + escapeHtml(u.email || 'No email') + '</div>' +
+                        '</div>' +
+                        '<span class="badge-unverified">UNVERIFIED</span>' +
+                    '</div>'
+                ).join('');
+            }
+        }
+
+        async function loadUsers() {
+            if (!usersShellBuilt) {
+                buildUsersShell();
+                usersShellBuilt = true;
+            }
+            verifiedList.innerHTML = '<div class="empty-state">Loading…</div>';
+            unverifiedList.innerHTML = '';
+            refreshUsersBtn.disabled = true;
+            try {
+                const snap = await getDocs(collection(db, 'users'));
+                allUsers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+                verifiedUsers = allUsers.filter(u => u.emailVerified === true);
+                unverifiedUsers = allUsers.filter(u => u.emailVerified !== true);
+                renderUsersList();
+            } catch (error) {
+                verifiedList.innerHTML = '<div class="stats-error">Failed to load users: ' + escapeHtml(error.message) + '</div>';
+            } finally {
+                refreshUsersBtn.disabled = false;
+            }
+        }
+
+        async function applyBonusDays() {
+            const days = parseInt(document.getElementById('bonusDaysInput').value);
+            if (isNaN(days) || days < 0) {
+                alert('Bonus days must be a non-negative integer.');
+                return;
+            }
+            const btn = document.getElementById('applyBonusBtn');
+            btn.disabled = true;
+            const count = selectedUids.size;
+            try {
+                const batch = writeBatch(db);
+                selectedUids.forEach(uid => batch.set(doc(db, 'users', uid), { bonusDays: days }, { merge: true }));
+                await batch.commit();
+                alert('Updated ' + count + ' users to ' + days + ' daily-bonus days.');
+                selectedUids.clear();
+                await loadUsers();
+            } catch (error) {
+                alert('Could not apply bonus days: ' + error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function adjustCredits() {
+            const amount = parseInt(document.getElementById('creditsInput').value);
+            if (isNaN(amount)) {
+                alert('Credits amount must be an integer.');
+                return;
+            }
+            if (!window.confirm('Adjust credits by ' + amount + ' for ' + selectedUids.size + ' users?')) return;
+            const btn = document.getElementById('adjustCreditsBtn');
+            btn.disabled = true;
+            const count = selectedUids.size;
+            try {
+                const batch = writeBatch(db);
+                selectedUids.forEach(uid => batch.set(doc(db, 'users', uid), { credits: increment(amount) }, { merge: true }));
+                await batch.commit();
+                alert('Adjusted credits for ' + count + ' users.');
+                selectedUids.clear();
+                await loadUsers();
+            } catch (error) {
+                alert('Could not adjust credits: ' + error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function bulkSuspend(newStatus) {
+            const targetUids = [...selectedUids].filter(uid => uid !== auth.currentUser?.uid && uid !== SUPER_ADMIN_UID);
+            if (newStatus === 'suspended' && targetUids.length === 0) {
+                alert('You cannot suspend your own account.');
+                return;
+            }
+            const label = newStatus === 'suspended' ? 'Suspend' : 'Reinstate';
+            if (!window.confirm(label + ' ' + targetUids.length + ' users?')) return;
+            const sBtn = document.getElementById('suspendSelBtn');
+            const rBtn = document.getElementById('reinstateSelBtn');
+            sBtn.disabled = true;
+            rBtn.disabled = true;
+            try {
+                const batch = writeBatch(db);
+                targetUids.forEach(uid => batch.set(doc(db, 'users', uid), { status: newStatus }, { merge: true }));
+                await batch.commit();
+                alert((newStatus === 'suspended' ? 'Suspended ' : 'Reinstated ') + targetUids.length + ' users.');
+                selectedUids.clear();
+                await loadUsers();
+            } catch (error) {
+                alert('Could not update users: ' + error.message);
+            } finally {
+                sBtn.disabled = false;
+                rBtn.disabled = false;
+            }
+        }
 
         let allReferrals = [];
         let currentFilter = 'pending';
