@@ -37,7 +37,7 @@
         }
 
         #pageWrapper { width: 100%; max-width: 400px; transition: max-width 0.2s; }
-        #pageWrapper.wide { max-width: 900px; }
+        #pageWrapper.dashboard-active { max-width: 1200px; }
 
         .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-align: center; margin-bottom: 32px; }
         .logo span { color: var(--accent-teal); }
@@ -102,9 +102,8 @@
 
         /* ---- Dashboard ---- */
         .dashboard-view { display: none; }
-        .dashboard-view.show { display: block; }
+        .dashboard-view.show { display: flex; gap: 24px; align-items: flex-start; }
 
-        .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
         .btn-logout {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
@@ -193,72 +192,177 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; transition: 0.2s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent-teal); }
         input:checked + .slider:before { transform: translateX(20px); }
+
+        /* ---- Sidebar layout ---- */
+        .sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 560px;
+        }
+
+        .sidebar-logo { font-size: 18px; font-weight: 900; letter-spacing: -1px; margin-bottom: 28px; padding: 0 8px; }
+        .sidebar-logo span { color: var(--accent-teal); }
+
+        .sidebar-nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+        .nav-item {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-family: inherit;
+        }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+        .nav-item.active { background: var(--accent-teal); border-color: var(--accent-teal); color: #05261f; }
+
+        .nav-item-soon { opacity: 0.55; }
+        .nav-item-soon.active { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); opacity: 1; }
+
+        .soon-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-logout { width: 100%; margin-top: 16px; }
+
+        .dashboard-content {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 32px;
+            min-height: 560px;
+        }
+
+        .content-section { display: none; }
+        .content-section.visible { display: block; }
     </style>
 </head>
 <body>
 
     <div id="pageWrapper">
-        <div class="logo">Opta<span>Job</span> <span style="color: var(--text-muted); font-weight: 600; font-size: 16px;">Admin</span></div>
+        <div id="loginWrapper">
+            <div class="logo">Opta<span>Job</span> <span style="color: var(--text-muted); font-weight: 600; font-size: 16px;">Admin</span></div>
 
-        <div class="glass-panel">
-            <div id="loginView">
-                <div class="panel-title">Admin Sign In</div>
-                <div class="panel-sub">Restricted access. Authorized personnel only.</div>
+            <div class="glass-panel">
+                <div id="loginView">
+                    <div class="panel-title">Admin Sign In</div>
+                    <div class="panel-sub">Restricted access. Authorized personnel only.</div>
 
-                <div id="errorMsg" class="error-msg"></div>
+                    <div id="errorMsg" class="error-msg"></div>
 
-                <form id="loginForm">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" autocomplete="username" required>
+                    <form id="loginForm">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" autocomplete="username" required>
 
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" autocomplete="current-password" required>
 
-                    <button type="submit" class="btn-primary" id="submitBtn">Sign In</button>
-                </form>
+                        <button type="submit" class="btn-primary" id="submitBtn">Sign In</button>
+                    </form>
+                </div>
             </div>
+        </div>
 
-            <div id="dashboardView" class="dashboard-view">
-                <div class="dash-header">
-                    <div>
-                        <div class="panel-title" style="margin-bottom: 2px;">Tester Referrals</div>
-                        <div class="panel-sub" style="margin-bottom: 0;">Review and manage tester sign-ups</div>
+        <div id="dashboardView" class="dashboard-view">
+            <aside class="sidebar">
+                <div class="sidebar-logo">Opta<span>Job</span></div>
+
+                <nav class="sidebar-nav">
+                    <button class="nav-item active" data-section="stats">Stats</button>
+                    <button class="nav-item" data-section="users">Users</button>
+                    <button class="nav-item" data-section="admins">Admins</button>
+                    <button class="nav-item" data-section="apis">APIs</button>
+                    <button class="nav-item" data-section="referrals">Referrals</button>
+                    <button class="nav-item nav-item-soon" data-section="helpdesk">Helpdesk <span class="soon-badge">SOON</span></button>
+                </nav>
+
+                <button class="btn-logout sidebar-logout" id="logoutBtn">Log Out</button>
+            </aside>
+
+            <main class="dashboard-content">
+                <section id="section-stats" class="content-section visible">
+                    <div class="empty-state">Statistics dashboard — coming in next update.</div>
+                </section>
+
+                <section id="section-users" class="content-section">
+                    <div class="empty-state">User management — coming in next update.</div>
+                </section>
+
+                <section id="section-admins" class="content-section">
+                    <div class="empty-state">Admin management — coming in next update.</div>
+                </section>
+
+                <section id="section-apis" class="content-section">
+                    <div class="empty-state">API vendor management — coming in next update.</div>
+                </section>
+
+                <section id="section-referrals" class="content-section">
+                    <div class="panel-title" style="margin-bottom: 2px;">Tester Referrals</div>
+                    <div class="panel-sub" style="margin-bottom: 20px;">Review and manage tester sign-ups</div>
+
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="pending">Pending</button>
+                        <button class="filter-tab" data-filter="added_to_console">Added to Console</button>
+                        <button class="filter-tab" data-filter="activated">Activated</button>
                     </div>
-                    <button class="btn-logout" id="logoutBtn">Log Out</button>
-                </div>
 
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="pending">Pending</button>
-                    <button class="filter-tab" data-filter="added_to_console">Added to Console</button>
-                    <button class="filter-tab" data-filter="activated">Activated</button>
-                </div>
-
-                <div id="referralList" class="referral-list">
-                    <div class="empty-state">Loading…</div>
-                </div>
-
-                <div class="settings-panel">
-                    <div class="settings-title">Settings</div>
-
-                    <label for="optInUrlInput">Play Console Opt-In URL</label>
-                    <div class="settings-row">
-                        <input type="text" id="optInUrlInput" placeholder="https://play.google.com/apps/testing/...">
-                        <button class="btn-save-small" id="saveOptInUrlBtn">Save</button>
+                    <div id="referralList" class="referral-list">
+                        <div class="empty-state">Loading…</div>
                     </div>
-                    <div class="settings-saved-msg" id="optInSavedMsg">Saved.</div>
 
-                    <div class="toggle-row">
-                        <div>
-                            <label style="margin-bottom: 2px;">Tester Recruitment Banner</label>
-                            <div class="toggle-sub">Show the in-app "help find testers" banner</div>
+                    <div class="settings-panel">
+                        <div class="settings-title">Settings</div>
+
+                        <label for="optInUrlInput">Play Console Opt-In URL</label>
+                        <div class="settings-row">
+                            <input type="text" id="optInUrlInput" placeholder="https://play.google.com/apps/testing/...">
+                            <button class="btn-save-small" id="saveOptInUrlBtn">Save</button>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="bannerToggle">
-                            <span class="slider"></span>
-                        </label>
+                        <div class="settings-saved-msg" id="optInSavedMsg">Saved.</div>
+
+                        <div class="toggle-row">
+                            <div>
+                                <label style="margin-bottom: 2px;">Tester Recruitment Banner</label>
+                                <div class="toggle-sub">Show the in-app "help find testers" banner</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="bannerToggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </section>
+
+                <section id="section-helpdesk" class="content-section">
+                    <div class="empty-state">Helpdesk & AI support — coming soon.</div>
+                </section>
+            </main>
         </div>
     </div>
 
@@ -282,6 +386,7 @@
 
         const loginForm = document.getElementById('loginForm');
         const loginView = document.getElementById('loginView');
+        const loginWrapper = document.getElementById('loginWrapper');
         const dashboardView = document.getElementById('dashboardView');
         const pageWrapper = document.getElementById('pageWrapper');
         const errorMsg = document.getElementById('errorMsg');
@@ -295,6 +400,8 @@
         const saveOptInUrlBtn = document.getElementById('saveOptInUrlBtn');
         const optInSavedMsg = document.getElementById('optInSavedMsg');
         const bannerToggle = document.getElementById('bannerToggle');
+        const navItems = document.querySelectorAll('.nav-item');
+        const contentSections = document.querySelectorAll('.content-section');
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -309,6 +416,17 @@
         function clearLoginForm() {
             loginForm.reset();
         }
+
+        function showSection(name) {
+            navItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-section') === name));
+            contentSections.forEach(section => section.classList.toggle('visible', section.id === 'section-' + name));
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                showSection(item.getAttribute('data-section'));
+            });
+        });
 
         let allReferrals = [];
         let currentFilter = 'pending';
@@ -452,7 +570,9 @@
         });
 
         function initDashboard() {
-            pageWrapper.classList.add('wide');
+            pageWrapper.classList.add('dashboard-active');
+            loginWrapper.style.display = 'none';
+            showSection('stats');
             startReferralsListener();
             loadSettings();
         }
@@ -461,7 +581,8 @@
             if (referralsUnsubscribe) referralsUnsubscribe();
             await signOut(auth).catch(() => {});
             dashboardView.classList.remove('show');
-            pageWrapper.classList.remove('wide');
+            pageWrapper.classList.remove('dashboard-active');
+            loginWrapper.style.display = 'block';
             loginView.style.display = 'block';
             clearLoginForm();
         });
