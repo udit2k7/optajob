@@ -261,6 +261,57 @@
 
         .content-section { display: none; }
         .content-section.visible { display: block; }
+
+        /* ---- Stats section ---- */
+        .stats-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+        .btn-refresh {
+            background: var(--accent-teal);
+            color: #05261f;
+            border: none;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .btn-refresh:hover { opacity: 0.9; }
+        .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .stat-group-title { font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px; }
+        .stat-group-title.first { margin-top: 0; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 18px 14px;
+            text-align: center;
+        }
+        .stat-value { font-size: 26px; font-weight: 900; color: var(--accent-teal); }
+        .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+        .dormancy-row {
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .dormancy-item { flex: 1; text-align: center; }
+        .dormancy-value { font-size: 18px; font-weight: 800; color: var(--text-main); }
+        .dormancy-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+        .stats-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+            font-size: 13px;
+            padding: 16px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -307,7 +358,16 @@
 
             <main class="dashboard-content">
                 <section id="section-stats" class="content-section visible">
-                    <div class="empty-state">Statistics dashboard — coming in next update.</div>
+                    <div class="stats-header">
+                        <div>
+                            <div class="panel-title" style="margin-bottom: 2px;">Statistics</div>
+                            <div class="panel-sub" style="margin-bottom: 0;">One-time snapshot of users and API usage</div>
+                        </div>
+                        <button class="btn-refresh" id="refreshStatsBtn">Refresh</button>
+                    </div>
+                    <div id="statsBody">
+                        <div class="empty-state">Loading…</div>
+                    </div>
                 </section>
 
                 <section id="section-users" class="content-section">
@@ -369,7 +429,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjLKuRraT7ux_SKA00X-QKrQo9ei4Qo3A",
@@ -402,6 +462,8 @@
         const bannerToggle = document.getElementById('bannerToggle');
         const navItems = document.querySelectorAll('.nav-item');
         const contentSections = document.querySelectorAll('.content-section');
+        const statsBody = document.getElementById('statsBody');
+        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -420,6 +482,7 @@
         function showSection(name) {
             navItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-section') === name));
             contentSections.forEach(section => section.classList.toggle('visible', section.id === 'section-' + name));
+            if (name === 'stats') loadStats();
         }
 
         navItems.forEach(item => {
@@ -427,6 +490,124 @@
                 showSection(item.getAttribute('data-section'));
             });
         });
+
+        function statCard(value, label) {
+            return '<div class="stat-card"><div class="stat-value">' + escapeHtml(String(value)) + '</div><div class="stat-label">' + escapeHtml(label) + '</div></div>';
+        }
+
+        function dormancyItem(value, label) {
+            return '<div class="dormancy-item"><div class="dormancy-value">' + escapeHtml(String(value)) + '</div><div class="dormancy-label">' + escapeHtml(label) + '</div></div>';
+        }
+
+        function renderStats(s) {
+            statsBody.innerHTML =
+                '<div class="stat-group-title first">Users</div>' +
+                '<div class="stat-grid">' +
+                    statCard(s.totalUsers, 'Total') +
+                    statCard(s.newToday, 'New Today') +
+                    statCard(s.newWeek, 'New (7d)') +
+                    statCard(s.newMonth, 'New (30d)') +
+                '</div>' +
+                '<div class="stat-group-title">Activity</div>' +
+                '<div class="stat-grid">' +
+                    statCard(s.activeToday, 'Active Today') +
+                    statCard(s.activeWeek, 'Active (7d)') +
+                '</div>' +
+                '<div class="dormancy-row">' +
+                    dormancyItem(s.activeToday, 'Today') +
+                    dormancyItem(s.d1_7, '1-7d') +
+                    dormancyItem(s.d8_30, '8-30d') +
+                    dormancyItem(s.d30plus, '30d+') +
+                    dormancyItem(s.never, 'Never') +
+                '</div>' +
+                '<div class="stat-group-title">Job Search API Credits</div>' +
+                '<div class="stat-grid">' +
+                    statCard(s.capacity, 'Capacity') +
+                    statCard(s.used, 'Used') +
+                    statCard(s.remaining, 'Remaining') +
+                    statCard(s.activeApis, 'Active APIs') +
+                '</div>';
+        }
+
+        async function loadStats() {
+            statsBody.innerHTML = '<div class="empty-state">Loading…</div>';
+            refreshStatsBtn.disabled = true;
+            try {
+                const [usersSnap, vaultSnap] = await Promise.all([
+                    getDocs(collection(db, 'users')),
+                    getDocs(collection(db, 'api_vault'))
+                ]);
+                const userList = usersSnap.docs.map(d => d.data());
+                const apiVault = vaultSnap.docs.map(d => d.data());
+
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const msDay = 86400000;
+
+                let newToday = 0, newWeek = 0, newMonth = 0;
+                let activeToday = 0, activeWeek = 0;
+                let d1_7 = 0, d8_30 = 0, d30plus = 0, never = 0;
+
+                userList.forEach(u => {
+                    if (u.createdAt) {
+                        const createdDate = new Date(u.createdAt);
+                        if (!isNaN(createdDate.getTime())) {
+                            const age = now.getTime() - createdDate.getTime();
+                            if (age <= msDay) newToday++;
+                            if (age <= 7 * msDay) newWeek++;
+                            if (age <= 30 * msDay) newMonth++;
+                        }
+                    }
+
+                    if (!u.lastActiveDate) {
+                        never++;
+                    } else {
+                        const lastActive = new Date(u.lastActiveDate);
+                        if (u.lastActiveDate === todayStr) {
+                            activeToday++;
+                            activeWeek++;
+                        } else if (!isNaN(lastActive.getTime())) {
+                            const age = now.getTime() - lastActive.getTime();
+                            if (age <= 7 * msDay) {
+                                activeWeek++;
+                                d1_7++;
+                            } else if (age <= 30 * msDay) {
+                                d8_30++;
+                            } else {
+                                d30plus++;
+                            }
+                        } else {
+                            never++;
+                        }
+                    }
+                });
+
+                const currentMonth = now.toISOString().slice(0, 7);
+                let capacity = 0, used = 0, activeApis = 0;
+                apiVault.forEach(api => {
+                    if (api.isActive) {
+                        capacity += parseInt(api.monthlyLimit || 0);
+                        used += (api.resetMonth === currentMonth) ? parseInt(api.usedThisMonth || 0) : 0;
+                        activeApis++;
+                    }
+                });
+                const remaining = capacity - used;
+
+                renderStats({
+                    totalUsers: userList.length,
+                    newToday, newWeek, newMonth,
+                    activeToday, activeWeek,
+                    d1_7, d8_30, d30plus, never,
+                    capacity, used, remaining, activeApis
+                });
+            } catch (error) {
+                statsBody.innerHTML = '<div class="stats-error">Failed to load statistics: ' + escapeHtml(error.message) + '</div>';
+            } finally {
+                refreshStatsBtn.disabled = false;
+            }
+        }
+
+        refreshStatsBtn.addEventListener('click', loadStats);
 
         let allReferrals = [];
         let currentFilter = 'pending';
