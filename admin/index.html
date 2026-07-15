@@ -404,6 +404,13 @@
             margin-bottom: 8px;
         }
         .badge-unverified { flex-shrink: 0; background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; }
+
+        /* ---- Admins section ---- */
+        .badge-admin { display: inline-block; background: rgba(61, 191, 160, 0.15); color: var(--accent-teal); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.5px; vertical-align: middle; }
+        .badge-you { display: inline-block; background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.5px; vertical-align: middle; }
+        .badge-protected { flex-shrink: 0; background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); font-size: 11px; font-weight: 800; padding: 9px 14px; border-radius: 8px; letter-spacing: 0.5px; }
+        .btn-revoke { background: var(--accent-red); flex: none; }
+        .btn-grant { background: var(--accent-indigo); flex: none; }
     </style>
 </head>
 <body>
@@ -476,7 +483,16 @@
                 </section>
 
                 <section id="section-admins" class="content-section">
-                    <div class="empty-state">Admin management — coming in next update.</div>
+                    <div class="stats-header">
+                        <div>
+                            <div class="panel-title" style="margin-bottom: 2px;">Manage Admins</div>
+                            <div class="panel-sub" style="margin-bottom: 0;">Grant or revoke admin access</div>
+                        </div>
+                        <button class="btn-refresh" id="refreshAdminsBtn">Refresh</button>
+                    </div>
+                    <div id="adminsBody">
+                        <div class="empty-state">Loading…</div>
+                    </div>
                 </section>
 
                 <section id="section-apis" class="content-section">
@@ -569,6 +585,8 @@
         const refreshStatsBtn = document.getElementById('refreshStatsBtn');
         const usersBody = document.getElementById('usersBody');
         const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+        const adminsBody = document.getElementById('adminsBody');
+        const refreshAdminsBtn = document.getElementById('refreshAdminsBtn');
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -589,6 +607,7 @@
             contentSections.forEach(section => section.classList.toggle('visible', section.id === 'section-' + name));
             if (name === 'stats') loadStats();
             if (name === 'users') loadUsers();
+            if (name === 'admins') loadAdmins();
         }
 
         navItems.forEach(item => {
@@ -939,6 +958,152 @@
             }
         }
 
+        // ---- Admins section ----
+        let allAdminUsers = [];
+        let grantSearch = '';
+        let adminsShellBuilt = false;
+        let currentAdminsHeading, currentAdminsList, grantSearchInput, grantCandidatesList;
+
+        let selfDocUnsubscribe = null;
+        let prevSelfIsAdmin = null;
+
+        function buildAdminsShell() {
+            adminsBody.innerHTML =
+                '<div class="stat-group-title first" id="currentAdminsHeading"></div>' +
+                '<div id="currentAdminsList"></div>' +
+                '<div class="stat-group-title" id="grantAdminHeading">Grant Admin</div>' +
+                '<input type="text" id="grantSearchInput" placeholder="Search verified users by name or email...">' +
+                '<div id="grantCandidatesList"></div>';
+
+            currentAdminsHeading = document.getElementById('currentAdminsHeading');
+            currentAdminsList = document.getElementById('currentAdminsList');
+            grantSearchInput = document.getElementById('grantSearchInput');
+            grantCandidatesList = document.getElementById('grantCandidatesList');
+
+            grantSearchInput.addEventListener('input', () => {
+                grantSearch = grantSearchInput.value;
+                renderAdminsList();
+            });
+
+            currentAdminsList.addEventListener('click', (e) => {
+                const btn = e.target.closest('.btn-revoke');
+                if (!btn) return;
+                handleRevokeAdmin(btn.getAttribute('data-uid'));
+            });
+
+            grantCandidatesList.addEventListener('click', (e) => {
+                const btn = e.target.closest('.btn-grant');
+                if (!btn) return;
+                handleGrantAdmin(btn.getAttribute('data-uid'));
+            });
+        }
+
+        function renderAdminsList() {
+            const currentAdmins = allAdminUsers.filter(u => u.isAdmin === true);
+            currentAdminsHeading.textContent = 'Current Admins (' + currentAdmins.length + ')';
+
+            if (currentAdmins.length === 0) {
+                currentAdminsList.innerHTML = '<div class="empty-state">No admins found.</div>';
+            } else {
+                currentAdminsList.innerHTML = currentAdmins.map(u => {
+                    const you = u.uid === auth.currentUser?.uid ? '<span class="badge-you">YOU</span>' : '';
+                    const right = u.uid === SUPER_ADMIN_UID
+                        ? '<span class="badge-protected">PROTECTED</span>'
+                        : '<button class="btn-bulk btn-revoke" data-uid="' + escapeHtml(u.uid) + '">Revoke Admin</button>';
+                    return '<div class="user-card">' +
+                            '<div class="user-info">' +
+                                '<div class="user-name">' + escapeHtml(u.fullName || 'Unnamed') + '<span class="badge-admin">ADMIN</span>' + you + '</div>' +
+                                '<div class="user-email">' + escapeHtml(u.email || 'No email') + '</div>' +
+                            '</div>' +
+                            right +
+                        '</div>';
+                }).join('');
+            }
+
+            const q = grantSearch.trim().toLowerCase();
+            let candidates = [];
+            if (q) {
+                candidates = allAdminUsers
+                    .filter(u => u.emailVerified === true && u.isAdmin !== true)
+                    .filter(u => (u.fullName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q))
+                    .slice(0, 10);
+            }
+
+            if (q && candidates.length === 0) {
+                grantCandidatesList.innerHTML = '<div class="empty-state">No matching verified users found.</div>';
+            } else {
+                grantCandidatesList.innerHTML = candidates.map(u =>
+                    '<div class="user-card">' +
+                        '<div class="user-info">' +
+                            '<div class="user-name">' + escapeHtml(u.fullName || 'Unnamed') + '</div>' +
+                            '<div class="user-email">' + escapeHtml(u.email || 'No email') + '</div>' +
+                        '</div>' +
+                        '<button class="btn-bulk btn-grant" data-uid="' + escapeHtml(u.uid) + '">Make Admin</button>' +
+                    '</div>'
+                ).join('');
+            }
+        }
+
+        async function loadAdmins() {
+            if (!adminsShellBuilt) {
+                buildAdminsShell();
+                adminsShellBuilt = true;
+            }
+            currentAdminsList.innerHTML = '<div class="empty-state">Loading…</div>';
+            grantCandidatesList.innerHTML = '';
+            refreshAdminsBtn.disabled = true;
+            try {
+                const snap = await getDocs(collection(db, 'users'));
+                allAdminUsers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+                renderAdminsList();
+            } catch (error) {
+                currentAdminsList.innerHTML = '<div class="stats-error">Failed to load admins: ' + escapeHtml(error.message) + '</div>';
+            } finally {
+                refreshAdminsBtn.disabled = false;
+            }
+        }
+
+        async function handleRevokeAdmin(uid) {
+            if (uid === SUPER_ADMIN_UID) return;
+            const user = allAdminUsers.find(u => u.uid === uid);
+            if (!user) return;
+            const isSelf = uid === auth.currentUser?.uid;
+            const msg = isSelf
+                ? 'This removes YOUR OWN admin access and returns you to the normal app. Continue?'
+                : 'Remove admin access from ' + (user.email || 'this user') + '?';
+            if (!window.confirm(msg)) return;
+            try {
+                await setDoc(doc(db, 'users', uid), { isAdmin: false }, { merge: true });
+                if (isSelf) {
+                    alert('Your admin access has been removed. You will be signed out.');
+                    await signOut(auth).catch(() => {});
+                    returnToLogin();
+                    return;
+                }
+                await loadAdmins();
+            } catch (error) {
+                alert('Could not revoke admin access: ' + error.message);
+            }
+        }
+
+        async function handleGrantAdmin(uid) {
+            const user = allAdminUsers.find(u => u.uid === uid);
+            if (!user) return;
+            if (user.emailVerified !== true) {
+                alert('Only verified users can be made admin.');
+                return;
+            }
+            if (!window.confirm('Give ' + (user.email || 'this user') + ' full admin access?')) return;
+            try {
+                await setDoc(doc(db, 'users', uid), { isAdmin: true }, { merge: true });
+                grantSearch = '';
+                if (grantSearchInput) grantSearchInput.value = '';
+                await loadAdmins();
+            } catch (error) {
+                alert('Could not grant admin access: ' + error.message);
+            }
+        }
+
         let allReferrals = [];
         let currentFilter = 'pending';
         let referralsUnsubscribe = null;
@@ -1080,22 +1245,48 @@
             }
         });
 
-        function initDashboard() {
-            pageWrapper.classList.add('dashboard-active');
-            loginWrapper.style.display = 'none';
-            showSection('stats');
-            startReferralsListener();
-            loadSettings();
-        }
-
-        logoutBtn.addEventListener('click', async () => {
-            if (referralsUnsubscribe) referralsUnsubscribe();
-            await signOut(auth).catch(() => {});
+        function returnToLogin() {
+            if (referralsUnsubscribe) { referralsUnsubscribe(); referralsUnsubscribe = null; }
+            if (selfDocUnsubscribe) { selfDocUnsubscribe(); selfDocUnsubscribe = null; }
+            prevSelfIsAdmin = null;
             dashboardView.classList.remove('show');
             pageWrapper.classList.remove('dashboard-active');
             loginWrapper.style.display = 'block';
             loginView.style.display = 'block';
             clearLoginForm();
+        }
+
+        function startSelfDocListener() {
+            const uid = auth.currentUser?.uid;
+            if (!uid) return;
+            prevSelfIsAdmin = null;
+            selfDocUnsubscribe = onSnapshot(doc(db, 'users', uid), (snap) => {
+                if (!snap.exists()) return;
+                const nowAdmin = snap.data().isAdmin === true;
+                // Only react to a live true -> false transition. The first snapshot
+                // sets the baseline and never fires.
+                if (prevSelfIsAdmin === true && nowAdmin === false) {
+                    alert('Your admin access has been removed. You will be signed out.');
+                    signOut(auth).catch(() => {});
+                    returnToLogin();
+                    return;
+                }
+                prevSelfIsAdmin = nowAdmin;
+            }, (err) => { console.warn('Self doc listener error:', err.message); });
+        }
+
+        function initDashboard() {
+            pageWrapper.classList.add('dashboard-active');
+            loginWrapper.style.display = 'none';
+            showSection('stats');
+            startReferralsListener();
+            startSelfDocListener();
+            loadSettings();
+        }
+
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth).catch(() => {});
+            returnToLogin();
         });
 
         loginForm.addEventListener('submit', async (e) => {
