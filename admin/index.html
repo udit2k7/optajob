@@ -411,6 +411,34 @@
         .badge-protected { flex-shrink: 0; background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); font-size: 11px; font-weight: 800; padding: 9px 14px; border-radius: 8px; letter-spacing: 0.5px; }
         .btn-revoke { background: var(--accent-red); flex: none; }
         .btn-grant { background: var(--accent-indigo); flex: none; }
+
+        /* ---- APIs section ---- */
+        .api-form { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px; margin: 16px 0; }
+        .api-form input { margin-bottom: 12px; }
+        .api-form input[type="number"] {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+        .api-form input[type="number"]:focus { border-color: var(--accent-teal); }
+        .vendor-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .api-form-actions { display: flex; gap: 10px; }
+        .api-cancel { background: rgba(255, 255, 255, 0.1); flex: 1; }
+        .api-save { background: var(--accent-teal); color: #05261f; flex: 2; }
+        .api-provider-chip { display: inline-block; background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.5px; vertical-align: middle; text-transform: uppercase; }
+        .api-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+        .api-status-active { background: #16a34a; }
+        .api-status-paused { background: var(--accent-red); }
+        .btn-api-toggle { flex: none; }
+        .btn-api-toggle-pause { background: var(--accent-amber); color: #05261f; }
+        .btn-api-toggle-resume { background: #16a34a; }
+        .btn-api-delete { background: var(--accent-red); flex: none; }
     </style>
 </head>
 <body>
@@ -496,7 +524,19 @@
                 </section>
 
                 <section id="section-apis" class="content-section">
-                    <div class="empty-state">API vendor management — coming in next update.</div>
+                    <div class="stats-header">
+                        <div>
+                            <div class="panel-title" style="margin-bottom: 2px;">Job Search APIs</div>
+                            <div class="panel-sub" style="margin-bottom: 0;">Add, rotate, or disable vendor API keys</div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-shrink:0;">
+                            <button class="btn-refresh" id="refreshApisBtn">Refresh</button>
+                            <button class="btn-refresh" id="addApiBtn">+ Add API</button>
+                        </div>
+                    </div>
+                    <div id="apisBody">
+                        <div class="empty-state">Loading…</div>
+                    </div>
                 </section>
 
                 <section id="section-referrals" class="content-section">
@@ -546,7 +586,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, onSnapshot, getDocs, writeBatch, increment, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjLKuRraT7ux_SKA00X-QKrQo9ei4Qo3A",
@@ -587,6 +627,9 @@
         const refreshUsersBtn = document.getElementById('refreshUsersBtn');
         const adminsBody = document.getElementById('adminsBody');
         const refreshAdminsBtn = document.getElementById('refreshAdminsBtn');
+        const apisBody = document.getElementById('apisBody');
+        const refreshApisBtn = document.getElementById('refreshApisBtn');
+        const addApiBtn = document.getElementById('addApiBtn');
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -608,6 +651,7 @@
             if (name === 'stats') loadStats();
             if (name === 'users') loadUsers();
             if (name === 'admins') loadAdmins();
+            if (name === 'apis') loadApis();
         }
 
         navItems.forEach(item => {
@@ -1101,6 +1145,191 @@
                 await loadAdmins();
             } catch (error) {
                 alert('Could not grant admin access: ' + error.message);
+            }
+        }
+
+        // ---- APIs section ----
+        let allApis = [];
+        let apisShellBuilt = false;
+        let selectedVendor = 'jsearch';
+        let apiStatsRow, apiList, addApiForm, vendorChips, apiLabelInput, apiKeyInput, apiLimitInput;
+
+        function buildApisShell() {
+            apisBody.innerHTML =
+                '<div class="stat-group-title first">Usage This Month</div>' +
+                '<div class="stat-grid" id="apiStatsRow"></div>' +
+                '<div class="api-form" id="addApiForm" style="display:none;">' +
+                    '<div class="settings-title">Add Job Search API</div>' +
+                    '<div class="vendor-chips" id="vendorChips">' +
+                        '<button class="filter-tab active" data-vendor="jsearch">JSearch</button>' +
+                        '<button class="filter-tab" data-vendor="jooble">Jooble</button>' +
+                        '<button class="filter-tab" data-vendor="adzuna">Adzuna</button>' +
+                        '<button class="filter-tab" data-vendor="openwebninja">OpenWebNinja</button>' +
+                    '</div>' +
+                    '<input type="text" id="apiLabelInput" placeholder="e.g. Jooble - myemail2@gmail.com">' +
+                    '<input type="password" id="apiKeyInput" placeholder="Paste exact API key here...">' +
+                    '<input type="number" id="apiLimitInput" placeholder="e.g. 500">' +
+                    '<div class="api-form-actions">' +
+                        '<button class="btn-bulk api-cancel" id="cancelApiBtn">Cancel</button>' +
+                        '<button class="btn-bulk api-save" id="saveApiBtn">Verify &amp; Save Key</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div id="apiList"></div>';
+
+            apiStatsRow = document.getElementById('apiStatsRow');
+            addApiForm = document.getElementById('addApiForm');
+            vendorChips = document.getElementById('vendorChips');
+            apiLabelInput = document.getElementById('apiLabelInput');
+            apiKeyInput = document.getElementById('apiKeyInput');
+            apiLimitInput = document.getElementById('apiLimitInput');
+            apiList = document.getElementById('apiList');
+
+            selectedVendor = 'jsearch';
+
+            vendorChips.addEventListener('click', (e) => {
+                const chip = e.target.closest('[data-vendor]');
+                if (!chip) return;
+                selectedVendor = chip.getAttribute('data-vendor');
+                vendorChips.querySelectorAll('[data-vendor]').forEach(c => c.classList.toggle('active', c === chip));
+            });
+
+            addApiBtn.addEventListener('click', () => {
+                addApiForm.style.display = addApiForm.style.display === 'none' ? 'block' : 'none';
+            });
+
+            document.getElementById('cancelApiBtn').addEventListener('click', () => {
+                addApiForm.style.display = 'none';
+            });
+
+            document.getElementById('saveApiBtn').addEventListener('click', handleAddApi);
+
+            apiList.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('.btn-api-toggle');
+                if (toggleBtn) {
+                    toggleApiStatus(toggleBtn.getAttribute('data-id'), toggleBtn.getAttribute('data-active') === 'true');
+                    return;
+                }
+                const delBtn = e.target.closest('.btn-api-delete');
+                if (delBtn) {
+                    deleteApi(delBtn.getAttribute('data-id'));
+                    return;
+                }
+            });
+        }
+
+        function renderApisList() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            let capacity = 0, used = 0, activeApis = 0;
+            allApis.forEach(api => {
+                if (api.isActive) {
+                    capacity += parseInt(api.monthlyLimit || 0);
+                    used += (api.resetMonth === currentMonth) ? parseInt(api.usedThisMonth || 0) : 0;
+                    activeApis++;
+                }
+            });
+            const remaining = capacity - used;
+            apiStatsRow.innerHTML =
+                statCard(capacity, 'Capacity') +
+                statCard(used, 'Used') +
+                statCard(remaining, 'Remaining') +
+                statCard(activeApis, 'Active');
+
+            if (allApis.length === 0) {
+                apiList.innerHTML = '<div class="empty-state">No job APIs yet. Click "+ Add API" above.</div>';
+                return;
+            }
+
+            apiList.innerHTML = allApis.map(api => {
+                const key = String(api.key || '');
+                const last4 = key.length >= 4 ? key.slice(-4) : key;
+                const active = api.isActive;
+                const dot = active ? 'api-status-active' : 'api-status-paused';
+                const toggleTxt = active ? 'Pause' : 'Resume';
+                const toggleCls = active ? 'btn-api-toggle-pause' : 'btn-api-toggle-resume';
+                return '<div class="user-card">' +
+                        '<div class="user-info">' +
+                            '<div class="user-name">' + escapeHtml(api.label || 'Unnamed') + '<span class="api-provider-chip">' + escapeHtml(api.providerType || '') + '</span><span class="api-status-dot ' + dot + '"></span></div>' +
+                            '<div class="user-email">Key: ••••••••••••' + escapeHtml(last4) + '</div>' +
+                            '<div class="user-stat">Usage: ' + escapeHtml(String(api.usedThisMonth || 0)) + ' / ' + escapeHtml(String(api.monthlyLimit ?? '—')) + ' this month</div>' +
+                        '</div>' +
+                        '<div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">' +
+                            '<button class="btn-bulk btn-api-toggle ' + toggleCls + '" data-id="' + escapeHtml(api.id) + '" data-active="' + (active ? 'true' : 'false') + '">' + toggleTxt + '</button>' +
+                            '<button class="btn-bulk btn-api-delete" data-id="' + escapeHtml(api.id) + '">Delete</button>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        async function loadApis() {
+            if (!apisShellBuilt) {
+                buildApisShell();
+                apisShellBuilt = true;
+            }
+            apiStatsRow.innerHTML = '';
+            apiList.innerHTML = '<div class="empty-state">Loading…</div>';
+            refreshApisBtn.disabled = true;
+            try {
+                const snap = await getDocs(collection(db, 'api_vault'));
+                allApis = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderApisList();
+            } catch (error) {
+                apiList.innerHTML = '<div class="stats-error">Failed to load APIs: ' + escapeHtml(error.message) + '</div>';
+            } finally {
+                refreshApisBtn.disabled = false;
+            }
+        }
+
+        async function handleAddApi() {
+            const label = apiLabelInput.value;
+            const key = apiKeyInput.value;
+            const limit = apiLimitInput.value;
+            if (!label.trim() || !key.trim() || !limit.trim()) {
+                alert('Please fill in label, API key, and monthly quota.');
+                return;
+            }
+            const saveBtn = document.getElementById('saveApiBtn');
+            saveBtn.disabled = true;
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            try {
+                await addDoc(collection(db, 'api_vault'), {
+                    label: label.trim(),
+                    providerType: selectedVendor,
+                    key: key.trim(),
+                    monthlyLimit: parseInt(limit),
+                    usedThisMonth: 0,
+                    resetMonth: currentMonth,
+                    isActive: true,
+                    addedAt: new Date().toISOString()
+                });
+                apiLabelInput.value = '';
+                apiKeyInput.value = '';
+                apiLimitInput.value = '';
+                addApiForm.style.display = 'none';
+                await loadApis();
+                alert(label.trim() + ' added to the waterfall.');
+            } catch (error) {
+                alert('Could not add API: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+            }
+        }
+
+        async function toggleApiStatus(id, currentActive) {
+            try {
+                await updateDoc(doc(db, 'api_vault', id), { isActive: !currentActive });
+                await loadApis();
+            } catch (error) {
+                alert('Could not update API status: ' + error.message);
+            }
+        }
+
+        async function deleteApi(id) {
+            if (!window.confirm('Permanently delete this API key? This cannot be undone.')) return;
+            try {
+                await deleteDoc(doc(db, 'api_vault', id));
+                await loadApis();
+            } catch (error) {
+                alert('Could not delete API: ' + error.message);
             }
         }
 
