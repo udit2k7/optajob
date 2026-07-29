@@ -1166,9 +1166,10 @@
                         '<button class="filter-tab" data-vendor="adzuna">Adzuna</button>' +
                         '<button class="filter-tab" data-vendor="openwebninja">OpenWebNinja</button>' +
                     '</div>' +
-                    '<input type="text" id="apiLabelInput" placeholder="e.g. Jooble - myemail2@gmail.com">' +
-                    '<input type="password" id="apiKeyInput" placeholder="Paste exact API key here...">' +
-                    '<input type="number" id="apiLimitInput" placeholder="e.g. 500">' +
+                    '<input type="text" id="apiLabelInput" placeholder="e.g. Jooble - myemail2@gmail.com" autocomplete="off">' +
+                    '<div style="font-size:12px;color:var(--accent-amber);margin-bottom:8px;">Paste the vendor API key here. If your browser offers to autofill a saved password, dismiss it — this is not a login field.</div>' +
+                    '<input type="text" id="apiKeyInput" placeholder="Paste exact API key here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other">' +
+                    '<input type="number" id="apiLimitInput" placeholder="e.g. 500" autocomplete="off">' +
                     '<div class="api-form-actions">' +
                         '<button class="btn-bulk api-cancel" id="cancelApiBtn">Cancel</button>' +
                         '<button class="btn-bulk api-save" id="saveApiBtn">Verify &amp; Save Key</button>' +
