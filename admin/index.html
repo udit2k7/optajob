@@ -477,7 +477,7 @@
                     <button class="nav-item" data-section="admins">Admins</button>
                     <button class="nav-item" data-section="apis">APIs</button>
                     <button class="nav-item" data-section="referrals">Referrals</button>
-                    <button class="nav-item nav-item-soon" data-section="helpdesk">Helpdesk <span class="soon-badge">SOON</span></button>
+                    <button class="nav-item" data-section="helpdesk">Helpdesk</button>
                 </nav>
 
                 <button class="btn-logout sidebar-logout" id="logoutBtn">Log Out</button>
@@ -577,7 +577,17 @@
                 </section>
 
                 <section id="section-helpdesk" class="content-section">
-                    <div class="empty-state">Helpdesk & AI support — coming soon.</div>
+                    <div class="panel-title" style="margin-bottom: 2px;">Helpdesk</div>
+                    <div class="panel-sub" style="margin-bottom: 20px;">Issues users have reported from inside the app (e.g. "Report to Admin" on an outdated AI model)</div>
+
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-ticket-filter="open">Open</button>
+                        <button class="filter-tab" data-ticket-filter="resolved">Resolved</button>
+                    </div>
+
+                    <div id="ticketList" class="referral-list">
+                        <div class="empty-state">Loading…</div>
+                    </div>
                 </section>
             </main>
         </div>
@@ -777,6 +787,9 @@
         }
 
         refreshStatsBtn.addEventListener('click', loadStats);
+        refreshUsersBtn.addEventListener('click', loadUsers);
+        refreshAdminsBtn.addEventListener('click', loadAdmins);
+        refreshApisBtn.addEventListener('click', loadApis);
 
         // ---- Users section ----
         let allUsers = [];
@@ -1430,6 +1443,79 @@
             });
         }
 
+        let ticketsUnsubscribe = null;
+        let allTickets = [];
+        let currentTicketFilter = 'open';
+        const ticketList = document.getElementById('ticketList');
+        const ticketFilterTabs = document.querySelectorAll('[data-ticket-filter]');
+
+        function categoryLabel(category) {
+            if (category === 'ai_model_outdated') return 'AI model needs updating';
+            return category || 'General';
+        }
+
+        function renderTickets() {
+            const filtered = allTickets.filter(t => (t.status || 'open') === currentTicketFilter);
+
+            if (filtered.length === 0) {
+                ticketList.innerHTML = '<div class="empty-state">No ' + currentTicketFilter + ' tickets.</div>';
+                return;
+            }
+
+            ticketList.innerHTML = filtered.map(t => {
+                const created = t.createdAt && typeof t.createdAt.toDate === 'function' ? t.createdAt.toDate() : t.createdAt;
+                const resolveBtn = (t.status || 'open') === 'open'
+                    ? '<button class="btn-mark-added" data-ticket-id="' + escapeHtml(t.id) + '">Mark Resolved</button>'
+                    : '';
+                return '<div class="referral-card">' +
+                        '<div class="referral-card-top">' +
+                            '<div>' +
+                                '<div class="referral-name">' + escapeHtml(categoryLabel(t.category)) + '</div>' +
+                                '<div class="referral-email">' + escapeHtml(t.email || 'Unknown user') + '</div>' +
+                            '</div>' +
+                            '<div class="referral-date">' + escapeHtml(formatDate(created)) + '</div>' +
+                        '</div>' +
+                        '<div class="friend-emails-label">Details</div>' +
+                        '<div class="friend-emails-list">' + escapeHtml(t.message || '') + '</div>' +
+                        resolveBtn +
+                    '</div>';
+            }).join('');
+
+            ticketList.querySelectorAll('.btn-mark-added').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-ticket-id');
+                    btn.disabled = true;
+                    btn.textContent = 'Updating...';
+                    try {
+                        await updateDoc(doc(db, 'support_tickets', id), { status: 'resolved' });
+                    } catch (error) {
+                        alert('Failed to update: ' + error.message);
+                        btn.disabled = false;
+                        btn.textContent = 'Mark Resolved';
+                    }
+                });
+            });
+        }
+
+        ticketFilterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                ticketFilterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTicketFilter = tab.getAttribute('data-ticket-filter');
+                renderTickets();
+            });
+        });
+
+        function startTicketsListener() {
+            const q = query(collection(db, 'support_tickets'), orderBy('createdAt', 'desc'));
+            ticketsUnsubscribe = onSnapshot(q, (snapshot) => {
+                allTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderTickets();
+            }, (error) => {
+                ticketList.innerHTML = '<div class="empty-state">Failed to load tickets: ' + escapeHtml(error.message) + '</div>';
+            });
+        }
+
         async function loadSettings() {
             try {
                 const optInSnap = await getDoc(doc(db, 'app_config', 'tester_program'));
@@ -1477,6 +1563,7 @@
 
         function returnToLogin() {
             if (referralsUnsubscribe) { referralsUnsubscribe(); referralsUnsubscribe = null; }
+            if (ticketsUnsubscribe) { ticketsUnsubscribe(); ticketsUnsubscribe = null; }
             if (selfDocUnsubscribe) { selfDocUnsubscribe(); selfDocUnsubscribe = null; }
             prevSelfIsAdmin = null;
             dashboardView.classList.remove('show');
@@ -1510,6 +1597,7 @@
             loginWrapper.style.display = 'none';
             showSection('stats');
             startReferralsListener();
+            startTicketsListener();
             startSelfDocListener();
             loadSettings();
         }
